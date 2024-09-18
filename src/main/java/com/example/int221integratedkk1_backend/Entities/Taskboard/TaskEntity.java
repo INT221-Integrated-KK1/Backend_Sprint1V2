@@ -40,6 +40,10 @@ public class TaskEntity {
     @JoinColumn(name = "taskStatus", referencedColumnName = "statusId", nullable = false, columnDefinition = "varchar(255) default 'No Status'")
     private StatusEntity status;
 
+    @ManyToOne
+    @JoinColumn(name = "boardId", nullable = false)
+    private BoardEntity board;
+
 
     public void setTitle(String title) {
         if (title != null) {

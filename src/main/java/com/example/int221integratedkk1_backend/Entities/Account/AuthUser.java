@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.User;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,9 +20,7 @@ public class AuthUser extends User implements Serializable {
     private String name;
     public AuthUser() {
         super("anonymous", "", new ArrayList<GrantedAuthority>()); }
-    public AuthUser(String userName, String password) {
-        super(userName, password, new ArrayList<GrantedAuthority>());
-    }
+
     public AuthUser(String userName, String password, Collection<? extends GrantedAuthority> authorities,
                     String oid, String email, Role role, String name) {
         super(userName, password, authorities);
@@ -30,5 +29,9 @@ public class AuthUser extends User implements Serializable {
         this.role = role;
         this.name = name;
     }
+
+//    public AuthUser(String userName, String password) {
+//        super(userName, password, new ArrayList<GrantedAuthority>());
+//    }
 }
 

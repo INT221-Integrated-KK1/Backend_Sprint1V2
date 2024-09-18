@@ -39,20 +39,14 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
 
     @Transactional
-    public List<UsersEntity> getAllUser() {
-        return userRepository.findAll();
-    }
-
-    @Transactional
     public boolean authenticateUser(String username, String password) {
-        UsersEntity user = userRepository.findByUsername(username);
-
-        if (user == null) {
+        UsersEntity users = userRepository.findByUsername(username);
+        if (users == null){
             return false;
+        } else {
+            Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
+            char[] passwordArray = password.toCharArray();
+            return argon2.verify(users.getPassword(), passwordArray);
         }
-
-        Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);
-        char[] passwordArray = password.toCharArray();
-        return argon2.verify(user.getPassword(), passwordArray);
     }
 }

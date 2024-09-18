@@ -1,0 +1,26 @@
+package com.example.int221integratedkk1_backend.Entities.Taskboard;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@Table(name = "Board", schema = "ITB-KK-V3")
+public class BoardEntity {
+
+    @Id
+    @Column(name = "BoardId", length = 10)
+    private String id;
+
+    @Column(name = "boardname", nullable = false, length = 120)
+    private String boardName;
+
+    @Column(name = "userId", length = 36, nullable = false)
+    private String ownerId;
+
+}

@@ -16,16 +16,18 @@ public class StatusEntity {
     @Column(name = "statusId")
     private int id;
 
-    @Basic
     @NotBlank(message = "Status name must not be null or empty")
     @Size(max = 50, message = "Name size must be between 0 and 50")
     @Column(name = "statusName", length = 50, nullable = false)
     private String name;
 
-    @Basic
     @Size(max = 200, message = "Description size must be between 0 and 200")
     @Column(name = "statusDescription", length = 200)
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "boardId", nullable = false)
+    private BoardEntity board;  // Link the status to a specific board
 
     public void setName(String name) {
         if (name != null) {

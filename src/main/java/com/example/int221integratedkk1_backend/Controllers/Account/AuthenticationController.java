@@ -33,10 +33,6 @@ public class AuthenticationController {
     @Autowired
     AuthenticationManager authenticationManager;
 
-    @GetMapping("/login")
-    public List<UsersEntity> getAllUsers() {
-        return jwtUserDetailsService.getAllUser();
-    }
 
     @PostMapping("/login")
     public ResponseEntity<Object> login(@Valid @RequestBody JwtRequestUser user) {

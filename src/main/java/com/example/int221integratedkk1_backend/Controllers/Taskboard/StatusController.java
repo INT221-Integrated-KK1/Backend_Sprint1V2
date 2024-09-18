@@ -1,88 +1,74 @@
 package com.example.int221integratedkk1_backend.Controllers.Taskboard;
 
 import com.example.int221integratedkk1_backend.Entities.Taskboard.StatusEntity;
-import com.example.int221integratedkk1_backend.Exception.*;
+import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
 import com.example.int221integratedkk1_backend.Services.Taskboard.StatusService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/v2/statuses")
+@RequestMapping("/v3/boards/{boardId}/statuses")
 @CrossOrigin(origins = {"http://localhost:5173", "http://ip23kk1.sit.kmutt.ac.th", "http://intproj23.sit.kmutt.ac.th", "http://intproj23.sit.kmutt.ac.th:8080", "http://ip23kk1.sit.kmutt.ac.th:8080"})
-//@CrossOrigin(origins = {"http://localhost:5173", "https://ip23kk1.sit.kmutt.ac.th", "https://intproj23.sit.kmutt.ac.th", "https://intproj23.sit.kmutt.ac.th:8080", "https://ip23kk1.sit.kmutt.ac.th:8080"})
-
 public class StatusController {
-    private final StatusService statusService;
 
     @Autowired
-    public StatusController(StatusService statusService) {
-        this.statusService = statusService;
-    }
+    private JwtTokenUtil jwtTokenUtil;
 
-    @GetMapping
-    public ResponseEntity<List<StatusEntity>> getAllStatuses() {
-        List<StatusEntity> statuses = statusService.getAllStatuses();
+    @Autowired
+    private StatusService statusService;
+
+    @GetMapping("")
+    public ResponseEntity<List<StatusEntity>> getAllStatuses(@PathVariable String boardId,
+                                                             @RequestHeader("Authorization") String requestTokenHeader) {
+        String userName = getUserNameFromToken(requestTokenHeader);
+        List<StatusEntity> statuses = statusService.getStatusesByBoard(boardId, userName);
         return ResponseEntity.ok(statuses);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<StatusEntity> getStatusById(@PathVariable int id) {
-        try {
-            StatusEntity status = statusService.getStatusById(id);
-            return ResponseEntity.ok(status);
-        } catch (ItemNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    @PostMapping("")
+    public ResponseEntity<StatusEntity> createStatus(@PathVariable String boardId,
+                                                     @RequestHeader("Authorization") String requestTokenHeader,
+                                                     @Valid @RequestBody StatusEntity statusEntity) {
+        String userName = getUserNameFromToken(requestTokenHeader);
+        StatusEntity createdStatus = statusService.createStatus(boardId, userName, statusEntity);
+        return ResponseEntity.status(201).body(createdStatus);
     }
 
-    @PostMapping
-    public ResponseEntity<Object> createStatus(@Valid @RequestBody StatusEntity statusEntity) {
-        try {
-            StatusEntity createdStatus = statusService.createStatus(statusEntity);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdStatus);
-        } catch (ValidateInputException | DuplicateStatusException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    @GetMapping("/{statusId}")
+    public ResponseEntity<StatusEntity> getStatusById(@PathVariable String boardId,
+                                                      @PathVariable Integer statusId,
+                                                      @RequestHeader("Authorization") String requestTokenHeader) {
+        String userName = getUserNameFromToken(requestTokenHeader);
+        StatusEntity status = statusService.getStatusByIdAndBoard(statusId, boardId, userName);
+        return ResponseEntity.ok(status);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Object> updateStatus(@PathVariable int id, @Valid @RequestBody StatusEntity updatedStatus) {
-        try {
-            String resultMessage = statusService.updateStatus(id, updatedStatus);
-            return ResponseEntity.ok(resultMessage);
-        } catch (ItemNotFoundException | ValidateInputException | DuplicateStatusException | UnManageStatusException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    @PutMapping("/{statusId}")
+    public ResponseEntity<String> updateStatus(@PathVariable String boardId,
+                                               @PathVariable Integer statusId,
+                                               @RequestHeader("Authorization") String requestTokenHeader,
+                                               @Valid @RequestBody StatusEntity updatedStatus) {
+        String userName = getUserNameFromToken(requestTokenHeader);
+        String result = statusService.updateStatus(statusId, boardId, userName, updatedStatus);
+        return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteStatus(@PathVariable int id) {
-        try {
-            statusService.deleteStatus(id);
-            return ResponseEntity.ok("The status has been deleted");
-        } catch (Throwable e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    @DeleteMapping("/{statusId}")
+    public ResponseEntity<String> deleteStatus(@PathVariable String boardId,
+                                               @PathVariable Integer statusId,
+                                               @RequestHeader("Authorization") String requestTokenHeader) {
+        String userName = getUserNameFromToken(requestTokenHeader);
+        statusService.deleteStatus(statusId, boardId, userName);
+        return ResponseEntity.ok("Status deleted successfully");
     }
 
-    @DeleteMapping("/{id}/{newId}")
-    public ResponseEntity<Object> transferAndDeleteStatus(@PathVariable int id, @PathVariable int newId) {
-        try {
-            int transferredTasks = statusService.transferTasksAndDeleteStatus(id, newId);
-            return ResponseEntity.ok(transferredTasks + " task(s) have been transferred and the status has been deleted");
-        } catch (ItemNotFoundException | UnManageStatusException | InvalidTransferIdException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+    private String getUserNameFromToken(String requestTokenHeader) {
+        String token = requestTokenHeader.substring(7);
+        return jwtTokenUtil.getUsernameFromToken(token);
     }
 }

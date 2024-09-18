@@ -1,16 +1,19 @@
 package com.example.int221integratedkk1_backend.Entities.Account;
 
+import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.NotBlank;
 
+import java.util.List;
+
+@Entity
 @Getter
 @Setter
-@Entity
 @Table(name = "users", schema = "itbkk_shared")
 public class UsersEntity {
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Id
     @Column(name = "oid")
     private String oid;
@@ -33,5 +36,8 @@ public class UsersEntity {
     @Basic
     @Column(name = "role")
     private Role role;
+
+//    @OneToMany(mappedBy = "owner")
+//    private List<BoardEntity> boards;
 }
 
