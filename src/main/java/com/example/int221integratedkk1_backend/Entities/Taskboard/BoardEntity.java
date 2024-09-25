@@ -1,11 +1,10 @@
 package com.example.int221integratedkk1_backend.Entities.Taskboard;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -22,5 +21,8 @@ public class BoardEntity {
 
     @Column(name = "userId", length = 36, nullable = false)
     private String ownerId;
+
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<StatusEntity> statuses;
 
 }

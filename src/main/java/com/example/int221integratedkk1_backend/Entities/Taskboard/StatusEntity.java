@@ -9,7 +9,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "Status", schema = "ITB-KK-V2")
+@Table(name = "Status", schema = "ITB-KK-V3")
 public class StatusEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
@@ -27,7 +27,7 @@ public class StatusEntity {
 
     @ManyToOne
     @JoinColumn(name = "boardId", nullable = false)
-    private BoardEntity board;  // Link the status to a specific board
+    private BoardEntity board;
 
     public void setName(String name) {
         if (name != null) {

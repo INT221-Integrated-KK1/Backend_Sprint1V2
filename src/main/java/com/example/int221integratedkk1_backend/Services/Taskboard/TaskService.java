@@ -47,7 +47,7 @@ public class TaskService {
         Sort sort = Sort.by(direction, sortBy);
         List<TaskEntity> tasks;
 
-        // Ensure the user owns the board
+
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
 
@@ -60,22 +60,43 @@ public class TaskService {
     }
 
     public TaskEntity getTaskByIdAndBoard(Integer taskId, String boardId, String ownerId) {
-        // Ensure the user owns the board
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
 
-        return repository.findByIdAndBoardId(taskId, boardId)
+        return repository.findByIdAndBoard_Id(taskId, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
     }
 
+//    @Transactional
+//    public TaskEntity createTask(String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
+//        // Ensure the user owns the board
+//        BoardEntity board = boardRepository.findByIdAndOwnerId(boardId, ownerId)
+//                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
+//
+//        StatusEntity status = statusRepository.findByIdAndBoard_Id(taskRequest.getStatus(), boardId)
+//                .orElseThrow(() -> new ItemNotFoundException("Status not found in this board"));
+//
+//        TaskEntity taskEntity = new TaskEntity();
+//        taskEntity.setTitle(taskRequest.getTitle().trim());
+//        taskEntity.setDescription(taskRequest.getDescription() != null ? taskRequest.getDescription().trim() : null);
+//        taskEntity.setAssignees(taskRequest.getAssignees() != null ? taskRequest.getAssignees().trim() : null);
+//        taskEntity.setStatus(status);
+//        taskEntity.setBoard(board);
+//
+//        return repository.save(taskEntity);
+//    }
+
     @Transactional
-    public TaskEntity createTask(String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
-        // Ensure the user owns the board
+    public TaskEntity createTask(String boardId, TaskRequest taskRequest, String ownerId) {
         BoardEntity board = boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
 
-        StatusEntity status = statusRepository.findByIdAndBoardId(taskRequest.getStatus(), boardId)
+        System.out.println("Board fetched: " + boardId + ", Owner ID: " + ownerId);
+
+        StatusEntity status = statusRepository.findByIdAndBoard_Id(taskRequest.getStatus(), boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Status not found in this board"));
+
+        System.out.println("Status fetched: " + status.getId() + " for Board ID: " + boardId);
 
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setTitle(taskRequest.getTitle().trim());
@@ -87,17 +108,18 @@ public class TaskService {
         return repository.save(taskEntity);
     }
 
+
+
     @Transactional
     public boolean updateTask(Integer id, String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
-        TaskEntity task = repository.findByIdAndBoardId(id, boardId)
+        TaskEntity task = repository.findByIdAndBoard_Id(id, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
 
-        // Ensure the user owns the board
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
 
         Integer statusId = taskRequest.getStatus();
-        StatusEntity statusEntity = statusRepository.findByIdAndBoardId(statusId, boardId)
+        StatusEntity statusEntity = statusRepository.findByIdAndBoard_Id(statusId, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Status not found in this board"));
 
         task.setTitle(taskRequest.getTitle().trim());
@@ -112,10 +134,9 @@ public class TaskService {
 
     @Transactional
     public boolean deleteTask(Integer id, String boardId, String ownerId) {
-        TaskEntity task = repository.findByIdAndBoardId(id, boardId)
+        TaskEntity task = repository.findByIdAndBoard_Id(id, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
 
-        // Ensure the user owns the board
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
 

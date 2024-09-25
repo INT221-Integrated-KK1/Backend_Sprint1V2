@@ -10,9 +10,10 @@ import java.util.Optional;
 
 public interface StatusRepository extends JpaRepository<StatusEntity, Integer> {
 
-    Optional<StatusEntity> findByIdAndBoardId(Integer id, String boardId);
+    Optional<StatusEntity> findByIdAndBoard_Id(Integer id, String boardId);
 
-    Optional<StatusEntity> findByNameAndBoardId(String name, String boardId);
+    Optional<StatusEntity> findByNameAndBoard_Id(String name, String boardId);
 
-    List<StatusEntity> findByBoardId(String boardId);
+    List<StatusEntity> findByBoard_Id(String boardId);
 }
+
