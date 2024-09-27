@@ -12,6 +12,6 @@ public class BoardRequest {
 
     @NotEmpty(message = "Board name cannot be empty")
     @Size(max = 120, message = "Board name must be less than 120 characters")
-    private String boardName;
+    private String name;
 
 }
