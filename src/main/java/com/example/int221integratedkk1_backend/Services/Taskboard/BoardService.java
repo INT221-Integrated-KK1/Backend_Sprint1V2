@@ -53,7 +53,7 @@ public class BoardService {
     public BoardEntity createBoard(String ownerId, BoardRequest boardRequest) {
         BoardEntity board = new BoardEntity();
         board.setId(generateUniqueBoardId() );
-        board.setBoardName(boardRequest.getBoardName());
+        board.setBoardName(boardRequest.getName());
         board.setOwnerId(ownerId);
         boardRepository.save(board);
 
