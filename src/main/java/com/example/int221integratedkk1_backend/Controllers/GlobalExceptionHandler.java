@@ -21,10 +21,19 @@ public class GlobalExceptionHandler {
         return createErrorResponse(exception.getMessage(), HttpStatus.NOT_FOUND, request);
     }
 
+
     @ExceptionHandler(ValidateInputException.class)
     public ResponseEntity<String> handleValidateInputException(ValidateInputException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
+    @ExceptionHandler(EmptyRequestBodyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorResponse> handleEmptyRequestBodyException(EmptyRequestBodyException exception, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), exception.getMessage(), request.getDescription(false).replace("uri=", ""));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
 
     @ExceptionHandler(UnManageStatusException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

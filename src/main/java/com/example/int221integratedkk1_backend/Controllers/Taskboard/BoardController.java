@@ -9,6 +9,7 @@ import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.StatusEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.TaskEntity;
+import com.example.int221integratedkk1_backend.Exception.EmptyRequestBodyException;
 import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
 import com.example.int221integratedkk1_backend.Services.Account.UserService;
 import com.example.int221integratedkk1_backend.Services.Taskboard.BoardService;
@@ -60,10 +61,13 @@ public class BoardController {
         return ResponseEntity.ok(boardResponses);
     }
 
-
     @PostMapping("")
     public ResponseEntity<BoardResponse> createBoard(@RequestHeader("Authorization") String requestTokenHeader,
-                                                     @Valid @RequestBody BoardRequest boardRequest) {
+                                                     @Valid @RequestBody(required = false) BoardRequest boardRequest) {
+        if (boardRequest == null || boardRequest.getName() == null || boardRequest.getName().trim().isEmpty()) {
+            throw new EmptyRequestBodyException("Request body is missing or board name is empty.");
+        }
+
         String ownerId = getUserIdFromToken(requestTokenHeader);
         BoardEntity createdBoard = boardService.createBoard(ownerId, boardRequest);
 
@@ -77,6 +81,9 @@ public class BoardController {
 
         return ResponseEntity.status(201).body(boardResponse);
     }
+
+
+
 
 
 
@@ -145,15 +152,16 @@ public class BoardController {
         return ResponseEntity.ok(task);
     }
 
-    @PutMapping("/{boardId}/tasks/{taskId}")
-    public ResponseEntity<String> updateTask(@PathVariable String boardId,
+@PutMapping("/{boardId}/tasks/{taskId}")
+public ResponseEntity<TaskEntity> updateTask(@PathVariable String boardId,
                                              @PathVariable Integer taskId,
                                              @Valid @RequestBody TaskRequest taskRequest,
                                              @RequestHeader("Authorization") String requestTokenHeader) throws Throwable {
-        String userName = getUserIdFromToken(requestTokenHeader);
-        taskService.updateTask(taskId, boardId, taskRequest, userName);
-        return ResponseEntity.ok("Task updated successfully");
-    }
+    String userName = getUserIdFromToken(requestTokenHeader);
+    TaskEntity updatedTask = taskService.updateTask(taskId, boardId, taskRequest, userName);
+    return ResponseEntity.ok(updatedTask);
+}
+
 
     @DeleteMapping("/{boardId}/tasks/{taskId}")
     public ResponseEntity<String> deleteTask(@PathVariable String boardId,
@@ -190,16 +198,17 @@ public class BoardController {
         StatusEntity status = statusService.getStatusByIdAndBoard(statusId, boardId, userName);
         return ResponseEntity.ok(status);
     }
+@PutMapping("/{boardId}/statuses/{statusId}")
+public ResponseEntity<StatusEntity> updateStatus(@PathVariable String boardId,
+                                                 @PathVariable Integer statusId,
+                                                 @RequestHeader("Authorization") String requestTokenHeader,
+                                                 @Valid @RequestBody StatusEntity updatedStatus) {
 
-    @PutMapping("/{boardId}/statuses/{statusId}")
-    public ResponseEntity<String> updateStatus(@PathVariable String boardId,
-                                               @PathVariable Integer statusId,
-                                               @RequestHeader("Authorization") String requestTokenHeader,
-                                               @Valid @RequestBody StatusEntity updatedStatus) {
-        String userName = getUserIdFromToken(requestTokenHeader);
-        String result = statusService.updateStatus(statusId, boardId, userName, updatedStatus);
-        return ResponseEntity.ok(result);
-    }
+    String userName = getUserIdFromToken(requestTokenHeader);
+    StatusEntity updatedEntity = statusService.updateStatus(statusId, boardId, userName, updatedStatus);
+
+    return ResponseEntity.ok(updatedEntity);
+}
 
     @DeleteMapping("/{boardId}/statuses/{statusId}")
     public ResponseEntity<String> deleteStatus(@PathVariable String boardId,

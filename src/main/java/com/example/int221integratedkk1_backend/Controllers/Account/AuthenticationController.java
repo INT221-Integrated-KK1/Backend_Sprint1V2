@@ -63,7 +63,7 @@ public class AuthenticationController {
                 System.out.println("JWT Token has expired");
             }
         } else {
-            throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED,
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "JWT Token does not begin with Bearer String");
         }
         return ResponseEntity.ok(claims);

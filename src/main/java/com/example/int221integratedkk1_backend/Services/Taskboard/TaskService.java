@@ -93,7 +93,8 @@ public class TaskService {
 
 
     @Transactional
-    public boolean updateTask(Integer id, String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
+    public TaskEntity updateTask(Integer id, String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
+
         TaskEntity task = repository.findByIdAndBoard_Id(id, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
 
@@ -110,9 +111,9 @@ public class TaskService {
         task.setStatus(statusEntity);
         task.setUpdatedOn(ZonedDateTime.now().toOffsetDateTime());
 
-        repository.save(task);
-        return true;
+        return repository.save(task);
     }
+
 
     @Transactional
     public boolean deleteTask(Integer id, String boardId, String ownerId) {
