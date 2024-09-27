@@ -1,5 +1,6 @@
 package com.example.int221integratedkk1_backend.Entities.Taskboard;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -25,6 +26,7 @@ public class StatusEntity {
     @Column(name = "statusDescription", length = 200)
     private String description;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "boardId", nullable = false)
     private BoardEntity board;

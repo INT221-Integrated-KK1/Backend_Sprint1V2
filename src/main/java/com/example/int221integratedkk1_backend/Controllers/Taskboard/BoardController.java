@@ -2,12 +2,15 @@ package com.example.int221integratedkk1_backend.Controllers.Taskboard;
 
 
 import com.example.int221integratedkk1_backend.DTOS.BoardRequest;
+import com.example.int221integratedkk1_backend.DTOS.BoardResponse;
 import com.example.int221integratedkk1_backend.DTOS.TaskDTO;
 import com.example.int221integratedkk1_backend.DTOS.TaskRequest;
+import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.StatusEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.TaskEntity;
 import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
+import com.example.int221integratedkk1_backend.Services.Account.UserService;
 import com.example.int221integratedkk1_backend.Services.Taskboard.BoardService;
 import com.example.int221integratedkk1_backend.Services.Taskboard.StatusService;
 import com.example.int221integratedkk1_backend.Services.Taskboard.TaskService;
@@ -17,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/v3/boards")
@@ -35,29 +39,63 @@ public class BoardController {
     @Autowired
     private StatusService statusService;
 
-    // board
+    @Autowired
+    private UserService userService;
+
     @GetMapping("")
-    public ResponseEntity<List<BoardEntity>> getAllBoards(@RequestHeader("Authorization") String requestTokenHeader) {
+    public ResponseEntity<List<BoardResponse>> getAllBoards(@RequestHeader("Authorization") String requestTokenHeader) {
         String ownerId = getUserIdFromToken(requestTokenHeader);
         List<BoardEntity> boards = boardService.getUserBoards(ownerId);
-        return ResponseEntity.ok(boards);
+        List<BoardResponse> boardResponses = boards.stream().map(boardEntity -> {
+            BoardResponse response = new BoardResponse();
+            response.setId(boardEntity.getId());
+            response.setName(boardEntity.getBoardName());
+            UsersEntity owner = userService.findUserById(boardEntity.getOwnerId());
+            BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
+            response.setOwner(ownerDTO);
+
+            return response;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(boardResponses);
     }
+
 
     @PostMapping("")
-    public ResponseEntity<BoardEntity> createBoard(@RequestHeader("Authorization") String requestTokenHeader,
-                                                   @Valid @RequestBody BoardRequest boardRequest) {
+    public ResponseEntity<BoardResponse> createBoard(@RequestHeader("Authorization") String requestTokenHeader,
+                                                     @Valid @RequestBody BoardRequest boardRequest) {
         String ownerId = getUserIdFromToken(requestTokenHeader);
         BoardEntity createdBoard = boardService.createBoard(ownerId, boardRequest);
-        return ResponseEntity.status(201).body(createdBoard);
+
+        BoardResponse boardResponse = new BoardResponse();
+        boardResponse.setId(createdBoard.getId());
+        boardResponse.setName(createdBoard.getBoardName());
+
+        UsersEntity owner = userService.findUserById(createdBoard.getOwnerId());
+        BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
+        boardResponse.setOwner(ownerDTO);
+
+        return ResponseEntity.status(201).body(boardResponse);
     }
 
+
+
     @GetMapping("/{boardId}")
-    public ResponseEntity<BoardEntity> getBoardById(@PathVariable String boardId,
-                                                    @RequestHeader("Authorization") String requestTokenHeader) {
+    public ResponseEntity<BoardResponse> getBoardById(@PathVariable String boardId,
+                                                      @RequestHeader("Authorization") String requestTokenHeader) {
         String ownerId = getUserIdFromToken(requestTokenHeader);
         BoardEntity board = boardService.getBoardByIdAndOwner(boardId, ownerId);
-        return ResponseEntity.ok(board);
+
+        BoardResponse boardResponse = new BoardResponse();
+        boardResponse.setId(board.getId());
+        boardResponse.setName(board.getBoardName());
+        UsersEntity owner = userService.findUserById(board.getOwnerId());
+        BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
+        boardResponse.setOwner(ownerDTO);
+
+        return ResponseEntity.ok(boardResponse);
     }
+
 
     @PutMapping("/{boardId}")
     public ResponseEntity<String> updateBoard(@PathVariable String boardId,

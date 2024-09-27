@@ -1,5 +1,6 @@
 package com.example.int221integratedkk1_backend.Entities.Taskboard;
 
+import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,5 +25,6 @@ public class BoardEntity {
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<StatusEntity> statuses;
+
 
 }

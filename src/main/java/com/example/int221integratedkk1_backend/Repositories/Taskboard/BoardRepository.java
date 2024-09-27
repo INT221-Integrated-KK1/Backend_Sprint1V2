@@ -10,12 +10,9 @@ import java.util.Optional;
 @Repository
 public interface BoardRepository extends JpaRepository<BoardEntity, String> {
 
-    // Find all boards for a specific user by ownerId
     List<BoardEntity> findByOwnerId(String ownerId);
 
-    // Find a board by ID and ownerId (for authorization)
     Optional<BoardEntity> findByIdAndOwnerId(String id, String ownerId);
 
-    // Check if a user already owns a board (by ownerId)
     boolean existsByOwnerId(String ownerId);
 }

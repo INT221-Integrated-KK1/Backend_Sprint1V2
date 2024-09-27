@@ -28,18 +28,17 @@ public class StatusService {
         this.boardRepository = boardRepository;
     }
 
-    // Get all statuses for a specific board
+
     public List<StatusEntity> getStatusesByBoard(String boardId, String ownerId) throws UnauthorizedException {
-        // Ensure the user owns the board
+
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own this board"));
 
         return statusRepository.findByBoard_Id(boardId);
     }
 
-    // Get a status by its ID and board
+
     public StatusEntity getStatusByIdAndBoard(int statusId, String boardId, String ownerId) throws ItemNotFoundException, UnauthorizedException {
-        // Ensure the user owns the board
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own this board"));
 

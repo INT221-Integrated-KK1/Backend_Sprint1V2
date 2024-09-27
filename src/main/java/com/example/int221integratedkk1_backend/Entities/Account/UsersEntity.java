@@ -37,7 +37,5 @@ public class UsersEntity {
     @Column(name = "role")
     private Role role;
 
-//    @OneToMany(mappedBy = "owner")
-//    private List<BoardEntity> boards;
 }
 

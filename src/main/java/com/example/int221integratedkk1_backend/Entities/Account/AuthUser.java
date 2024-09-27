@@ -30,8 +30,5 @@ public class AuthUser extends User implements Serializable {
         this.name = name;
     }
 
-//    public AuthUser(String userName, String password) {
-//        super(userName, password, new ArrayList<GrantedAuthority>());
-//    }
 }
 

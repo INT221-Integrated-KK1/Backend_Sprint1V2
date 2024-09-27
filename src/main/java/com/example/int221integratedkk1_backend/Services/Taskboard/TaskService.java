@@ -67,36 +67,18 @@ public class TaskService {
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
     }
 
-//    @Transactional
-//    public TaskEntity createTask(String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
-//        // Ensure the user owns the board
-//        BoardEntity board = boardRepository.findByIdAndOwnerId(boardId, ownerId)
-//                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
-//
-//        StatusEntity status = statusRepository.findByIdAndBoard_Id(taskRequest.getStatus(), boardId)
-//                .orElseThrow(() -> new ItemNotFoundException("Status not found in this board"));
-//
-//        TaskEntity taskEntity = new TaskEntity();
-//        taskEntity.setTitle(taskRequest.getTitle().trim());
-//        taskEntity.setDescription(taskRequest.getDescription() != null ? taskRequest.getDescription().trim() : null);
-//        taskEntity.setAssignees(taskRequest.getAssignees() != null ? taskRequest.getAssignees().trim() : null);
-//        taskEntity.setStatus(status);
-//        taskEntity.setBoard(board);
-//
-//        return repository.save(taskEntity);
-//    }
 
     @Transactional
     public TaskEntity createTask(String boardId, TaskRequest taskRequest, String ownerId) {
         BoardEntity board = boardRepository.findByIdAndOwnerId(boardId, ownerId)
                 .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
 
-        System.out.println("Board fetched: " + boardId + ", Owner ID: " + ownerId);
+       // System.out.println("Board fetched: " + boardId + ", Owner ID: " + ownerId);
 
         StatusEntity status = statusRepository.findByIdAndBoard_Id(taskRequest.getStatus(), boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Status not found in this board"));
 
-        System.out.println("Status fetched: " + status.getId() + " for Board ID: " + boardId);
+        //System.out.println("Status fetched: " + status.getId() + " for Board ID: " + boardId);
 
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setTitle(taskRequest.getTitle().trim());
