@@ -35,9 +35,6 @@ public class TaskService {
     @Autowired
     private ListMapper listMapper;
 
-    @Autowired
-    private ModelMapper modelMapper;
-
     public List<TaskDTO> getAllTasks(String boardId, List<String> filterStatuses, String sortBy, String sortDirection, String ownerId) {
         Sort.Direction direction = Sort.Direction.ASC;
         if ("DESC".equalsIgnoreCase(sortDirection)) {
@@ -49,7 +46,7 @@ public class TaskService {
 
 
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
+                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         if (filterStatuses != null && !filterStatuses.isEmpty()) {
             tasks = repository.findAllByStatusNamesAndBoardId(filterStatuses, boardId, sort);
@@ -61,7 +58,7 @@ public class TaskService {
 
     public TaskEntity getTaskByIdAndBoard(Integer taskId, String boardId, String ownerId) {
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
+                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         return repository.findByIdAndBoard_Id(taskId, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
@@ -71,14 +68,10 @@ public class TaskService {
     @Transactional
     public TaskEntity createTask(String boardId, TaskRequest taskRequest, String ownerId) {
         BoardEntity board = boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
-
-       // System.out.println("Board fetched: " + boardId + ", Owner ID: " + ownerId);
+                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         StatusEntity status = statusRepository.findByIdAndBoard_Id(taskRequest.getStatus(), boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Status not found in this board"));
-
-        //System.out.println("Status fetched: " + status.getId() + " for Board ID: " + boardId);
 
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setTitle(taskRequest.getTitle().trim());
@@ -91,7 +84,6 @@ public class TaskService {
     }
 
 
-
     @Transactional
     public TaskEntity updateTask(Integer id, String boardId, TaskRequest taskRequest, String ownerId) throws Throwable {
 
@@ -99,7 +91,7 @@ public class TaskService {
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
 
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
+                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         Integer statusId = taskRequest.getStatus();
         StatusEntity statusEntity = statusRepository.findByIdAndBoard_Id(statusId, boardId)
@@ -121,7 +113,7 @@ public class TaskService {
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
 
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new UnauthorizedException("User does not own the board"));
+                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         repository.delete(task);
         return true;

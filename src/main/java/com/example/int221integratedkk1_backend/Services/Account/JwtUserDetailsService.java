@@ -35,13 +35,13 @@ public class JwtUserDetailsService implements UserDetailsService {
         roles.add(grantedAuthority);
 
         return new AuthUser(users.getUsername(), users.getPassword(), roles,
-                users.getOid(), users.getEmail(), users.getRole(),users.getName());
+                users.getOid(), users.getEmail(), users.getRole(), users.getName());
     }
 
     @Transactional
     public boolean authenticateUser(String username, String password) {
         UsersEntity users = userRepository.findByUsername(username);
-        if (users == null){
+        if (users == null) {
             return false;
         } else {
             Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id, 16, 32);

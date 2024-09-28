@@ -13,6 +13,7 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
 import javax.sql.DataSource;
 
 @Configuration
@@ -20,7 +21,7 @@ import javax.sql.DataSource;
 @EnableJpaRepositories(
         entityManagerFactoryRef = "boardEntityManagerFactory",
         transactionManagerRef = "boardTransactionManager",
-        basePackages = { "com.example.int221integratedkk1_backend.Repositories.Taskboard" }
+        basePackages = {"com.example.int221integratedkk1_backend.Repositories.Taskboard"}
 )
 public class TaskBoardConfig {
     @Primary

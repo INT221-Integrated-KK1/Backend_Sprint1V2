@@ -11,6 +11,6 @@ import lombok.Setter;
 @AllArgsConstructor
 
 public class OwnerDTO {
-    private  String oid;
+    private String oid;
     private String name;
 }

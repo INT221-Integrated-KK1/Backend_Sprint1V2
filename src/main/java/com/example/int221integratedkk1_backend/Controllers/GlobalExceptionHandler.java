@@ -80,6 +80,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInternalServerErrorException(InternalServerErrorException exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
     }
+
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus httpStatus, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(httpStatus.value(), message, request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(httpStatus).body(errorResponse);

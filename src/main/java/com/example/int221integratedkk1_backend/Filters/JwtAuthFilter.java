@@ -40,20 +40,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 try {
                     username = jwtTokenUtil.getUsernameFromToken(jwtToken);
                 } catch (ExpiredJwtException e) {
-                    throw new UnauthorizedException("JWT Token is expired"); //token expired
+                    throw new UnauthorizedException("JWT Token is expired");
                 } catch (MalformedJwtException e) {
-                    throw new UnauthorizedException("JWT Token is not well-formed JWT"); //not well-formed JWT
+                    throw new UnauthorizedException("JWT Token is not well-formed JWT");
                 } catch (SignatureException e) {
-                    throw new UnauthorizedException("JWT Token has been tampered with"); //token tampered with
+                    throw new UnauthorizedException("JWT Token has been tampered ");
                 } catch (IllegalArgumentException e) {
-                    throw new UnauthorizedException("Unable to get JWT Token"); //not authenticated
+                    throw new UnauthorizedException("Unable to get JWT Token");
                 }
             } else {
                 throw new UnauthorizedException("JWT Token is missing or does not begin with Bearer String");
             }
         }
 
-        // token correct
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.jwtUserDetailsService.loadUserByUsername(username);
             if (jwtTokenUtil.validateToken(jwtToken, userDetails)) {

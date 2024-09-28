@@ -83,10 +83,6 @@ public class BoardController {
     }
 
 
-
-
-
-
     @GetMapping("/{boardId}")
     public ResponseEntity<BoardResponse> getBoardById(@PathVariable String boardId,
                                                       @RequestHeader("Authorization") String requestTokenHeader) {
@@ -152,15 +148,15 @@ public class BoardController {
         return ResponseEntity.ok(task);
     }
 
-@PutMapping("/{boardId}/tasks/{taskId}")
-public ResponseEntity<TaskEntity> updateTask(@PathVariable String boardId,
-                                             @PathVariable Integer taskId,
-                                             @Valid @RequestBody TaskRequest taskRequest,
-                                             @RequestHeader("Authorization") String requestTokenHeader) throws Throwable {
-    String userName = getUserIdFromToken(requestTokenHeader);
-    TaskEntity updatedTask = taskService.updateTask(taskId, boardId, taskRequest, userName);
-    return ResponseEntity.ok(updatedTask);
-}
+    @PutMapping("/{boardId}/tasks/{taskId}")
+    public ResponseEntity<TaskEntity> updateTask(@PathVariable String boardId,
+                                                 @PathVariable Integer taskId,
+                                                 @Valid @RequestBody TaskRequest taskRequest,
+                                                 @RequestHeader("Authorization") String requestTokenHeader) throws Throwable {
+        String userName = getUserIdFromToken(requestTokenHeader);
+        TaskEntity updatedTask = taskService.updateTask(taskId, boardId, taskRequest, userName);
+        return ResponseEntity.ok(updatedTask);
+    }
 
 
     @DeleteMapping("/{boardId}/tasks/{taskId}")
@@ -198,17 +194,18 @@ public ResponseEntity<TaskEntity> updateTask(@PathVariable String boardId,
         StatusEntity status = statusService.getStatusByIdAndBoard(statusId, boardId, userName);
         return ResponseEntity.ok(status);
     }
-@PutMapping("/{boardId}/statuses/{statusId}")
-public ResponseEntity<StatusEntity> updateStatus(@PathVariable String boardId,
-                                                 @PathVariable Integer statusId,
-                                                 @RequestHeader("Authorization") String requestTokenHeader,
-                                                 @Valid @RequestBody StatusEntity updatedStatus) {
 
-    String userName = getUserIdFromToken(requestTokenHeader);
-    StatusEntity updatedEntity = statusService.updateStatus(statusId, boardId, userName, updatedStatus);
+    @PutMapping("/{boardId}/statuses/{statusId}")
+    public ResponseEntity<StatusEntity> updateStatus(@PathVariable String boardId,
+                                                     @PathVariable Integer statusId,
+                                                     @RequestHeader("Authorization") String requestTokenHeader,
+                                                     @Valid @RequestBody StatusEntity updatedStatus) {
 
-    return ResponseEntity.ok(updatedEntity);
-}
+        String userName = getUserIdFromToken(requestTokenHeader);
+        StatusEntity updatedEntity = statusService.updateStatus(statusId, boardId, userName, updatedStatus);
+
+        return ResponseEntity.ok(updatedEntity);
+    }
 
     @DeleteMapping("/{boardId}/statuses/{statusId}")
     public ResponseEntity<String> deleteStatus(@PathVariable String boardId,
