@@ -8,14 +8,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TaskRepository extends JpaRepository<TaskEntity, Integer> {
 
-    List<TaskEntity> findByStatusId(int statusId);
+    List<TaskEntity> findByStatusId(Integer statusId);
 
-    @Query("select t from TaskEntity t join StatusEntity s on s.id = t.status.id where t.status.name in :status ")
-    List<TaskEntity> findAllByStatusNames(@Param("status") List<String> status, Sort sort);
+    Optional<TaskEntity> findByIdAndBoard_Id(Integer taskId, String boardId);
 
+    @Query("select t from TaskEntity t where t.status.name in :status and t.board.id = :boardId")
+    List<TaskEntity> findAllByStatusNamesAndBoardId(@Param("status") List<String> status, @Param("boardId") String boardId, Sort sort);
+
+    @Query("select t from TaskEntity t where t.board.id = :boardId")
+    List<TaskEntity> findAllByBoardId(@Param("boardId") String boardId, Sort sort);
 
 }

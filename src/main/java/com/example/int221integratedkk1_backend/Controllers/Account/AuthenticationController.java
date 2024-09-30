@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
 @CrossOrigin(origins = {"http://localhost:5173", "http://ip23kk1.sit.kmutt.ac.th", "http://intproj23.sit.kmutt.ac.th", "http://intproj23.sit.kmutt.ac.th:8080", "http://ip23kk1.sit.kmutt.ac.th:8080"})
 //@CrossOrigin(origins = {"http://localhost:5173", "https://ip23kk1.sit.kmutt.ac.th", "https://intproj23.sit.kmutt.ac.th", "https://intproj23.sit.kmutt.ac.th:8080", "https://ip23kk1.sit.kmutt.ac.th:8080"})
 
@@ -33,10 +34,6 @@ public class AuthenticationController {
     @Autowired
     AuthenticationManager authenticationManager;
 
-    @GetMapping("/login")
-    public List<UsersEntity> getAllUsers() {
-        return jwtUserDetailsService.getAllUser();
-    }
 
     @PostMapping("/login")
     public ResponseEntity<Object> login(@Valid @RequestBody JwtRequestUser user) {
@@ -67,7 +64,7 @@ public class AuthenticationController {
                 System.out.println("JWT Token has expired");
             }
         } else {
-            throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED,
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "JWT Token does not begin with Bearer String");
         }
         return ResponseEntity.ok(claims);

@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
 @Setter
 @Getter
 @Entity
-@Table(name = "task", schema = "ITB-KK-V2")
+@Table(name = "task", schema = "ITB-KK-V3")
 public class TaskEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
@@ -37,8 +37,12 @@ public class TaskEntity {
     private OffsetDateTime updatedOn;
 
     @ManyToOne
-    @JoinColumn(name = "taskStatus", referencedColumnName = "statusId", nullable = false, columnDefinition = "varchar(255) default 'No Status'")
+    @JoinColumn(name = "statusId", referencedColumnName = "statusId", nullable = false, columnDefinition = "varchar(255) default 'No Status'")
     private StatusEntity status;
+
+    @ManyToOne
+    @JoinColumn(name = "boardId", nullable = false)
+    private BoardEntity board;
 
 
     public void setTitle(String title) {
