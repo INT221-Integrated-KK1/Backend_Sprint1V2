@@ -2,6 +2,7 @@ package com.example.int221integratedkk1_backend.Services.Taskboard;
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 import com.example.int221integratedkk1_backend.DTOS.BoardRequest;
+import com.example.int221integratedkk1_backend.Entities.Account.Visibility;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.StatusEntity;
 import com.example.int221integratedkk1_backend.Exception.DuplicateBoardException;
@@ -41,12 +42,17 @@ public class BoardService {
         board.setId(generateUniqueBoardId());
         board.setBoardName(boardRequest.getName());
         board.setOwnerId(ownerId);
-        boardRepository.save(board);
 
+
+        board.setVisibility(Visibility.PRIVATE);
+
+        boardRepository.save(board);
         createDefaultStatuses(board);
 
         return board;
     }
+
+
 
     private void createDefaultStatuses(BoardEntity board) {
         String[] defaultStatusNames = {"No Status", "To Do", "Doing", "Done"};
@@ -97,6 +103,16 @@ public class BoardService {
 
         board.setBoardName(updatedBoard.getBoardName());
 
+        boardRepository.save(board);
+    }
+
+    public BoardEntity getBoardById(String boardId) throws ItemNotFoundException {
+        return boardRepository.findById(boardId)
+                .orElseThrow(() -> new ItemNotFoundException("Board not found"));
+    }
+
+    @Transactional
+    public void updateBoardVisibility(BoardEntity board) {
         boardRepository.save(board);
     }
 }
