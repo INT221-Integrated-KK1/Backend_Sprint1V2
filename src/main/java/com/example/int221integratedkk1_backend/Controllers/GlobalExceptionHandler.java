@@ -93,6 +93,7 @@ public class GlobalExceptionHandler {
         errorDetails.setErrors(errors);
         return ResponseEntity.status(httpStatus).body(errorDetails);
     }
+
 }
 
 

@@ -42,7 +42,8 @@ public class AuthenticationController {
                     new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword()));
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String token = jwtTokenUtil.generateToken(userDetails);
-            return ResponseEntity.ok(new JwtResponseToken(token));
+            String refreshtoken = jwtTokenUtil.generateRefreshToken(userDetails);
+            return ResponseEntity.ok(new JwtResponseToken(token,refreshtoken));
         } catch (UnauthorizedException e) {
             throw new UnauthorizedException("Username or Password is incorrect.");
         } catch (Exception e) {
@@ -74,13 +75,10 @@ public class AuthenticationController {
     // เช็คว่า token 30 นาที หมดอายุ แล้ว gen token ใหม่ขึ้นมา (เป็น token 30 นาที)
     // อย่าลืมเช็ค oid ให้มันตรงกัน
     @PostMapping("/token")
-    public ResponseEntity<Object> refreshAccessToken(@RequestHeader("Authorization") String requestTokenHeader) {
-        String refreshToken = null;
+    public ResponseEntity<Object> refreshAccessToken(@RequestHeader("x-refresh-token") String requestTokenHeader) {
+        String refreshToken = requestTokenHeader;
         Claims claims = null;
 
-        // ตรวจสอบว่า token ถูกส่งมาพร้อมกับ Bearer หรือไม่
-        if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
-            refreshToken = requestTokenHeader.substring(7);
 
             try {
                 // ดึงข้อมูล claims จาก refresh token
@@ -95,7 +93,7 @@ public class AuthenticationController {
                 String oidFromRefreshToken = claims.get("oid", String.class);
 
                 // ตรวจสอบว่าผู้ใช้ที่เรียกใช้ refresh token นี้มี oid ที่ตรงกัน
-                UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(claims.getSubject());
+                UserDetails userDetails = jwtUserDetailsService.loadUserByOid(oidFromRefreshToken);
                 if (userDetails != null) {
                     AuthUser authUser = (AuthUser) userDetails;
                     if (!authUser.getOid().equals(oidFromRefreshToken)) {
@@ -112,10 +110,6 @@ public class AuthenticationController {
             } catch (Exception e) {
                 throw new UnauthorizedException("Invalid refresh token");
             }
-        } else {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "JWT Token does not begin with Bearer String");
-        }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
     }

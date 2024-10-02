@@ -38,6 +38,21 @@ public class JwtUserDetailsService implements UserDetailsService {
                 users.getOid(), users.getEmail(), users.getRole(),users.getName());
     }
 
+
+    public UserDetails loadUserByOid(String oid) throws UsernameNotFoundException {
+        UsersEntity users = userRepository.findByOid(oid);
+        if (users == null) {
+            throw new UnauthorizedException(oid + " oid does not exist");
+        }
+
+        List<GrantedAuthority> roles = new ArrayList<>();
+        GrantedAuthority grantedAuthority = () -> users.getRole().toString();
+        roles.add(grantedAuthority);
+
+        return new AuthUser(users.getUsername(), users.getPassword(), roles,
+                users.getOid(), users.getEmail(), users.getRole(),users.getName());
+    }
+
     @Transactional
     public boolean authenticateUser(String username, String password) {
         UsersEntity users = userRepository.findByUsername(username);
