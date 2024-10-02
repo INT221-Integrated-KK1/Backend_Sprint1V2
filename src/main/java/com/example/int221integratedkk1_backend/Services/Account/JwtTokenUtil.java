@@ -20,7 +20,8 @@ public class JwtTokenUtil implements Serializable {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
-    @Value("#{${jwt.max-token-interval-hour}*60*60*1000}")
+    // สร้างตัวแปรอีกตัวนึง สำหรับ refresh token (24 hr)
+    @Value("#{${jwt.max-token-interval-hour}*60*60*1000}") // 30 นาที
     private long JWT_TOKEN_VALIDITY;
 
     private final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
@@ -50,6 +51,7 @@ public class JwtTokenUtil implements Serializable {
         return expiration.before(new Date());
     }
 
+    // pbi22 เพิ่ม refresh token อีกตัวนึงตรงนี้
     public String generateToken(UserDetails userDetails) {
         AuthUser authUser = (AuthUser) userDetails;
         Map<String, Object> claims = new HashMap<>();

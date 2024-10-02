@@ -68,5 +68,8 @@ public class AuthenticationController {
         }
         return ResponseEntity.ok(claims);
     }
-}
 
+    // pbi 22 เพิ่ม method post มาอีกอันนึง เอาไว้รับ refresh token จาก frontend
+    // เช็คว่า token 30 นาที หมดอายุ แล้ว gen token ใหม่ขึ้นมา (เป็น token 30 นาที)
+    // อย่าลืมเช็ค oid ให้มันตรงกัน
+}
