@@ -2,6 +2,7 @@ package com.example.int221integratedkk1_backend.Controllers.Account;
 
 import com.example.int221integratedkk1_backend.DTOS.JwtRequestUser;
 import com.example.int221integratedkk1_backend.DTOS.JwtResponseToken;
+import com.example.int221integratedkk1_backend.Entities.Account.AuthUser;
 import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
 import com.example.int221integratedkk1_backend.Exception.UnauthorizedException;
 import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
@@ -72,4 +73,51 @@ public class AuthenticationController {
     // pbi 22 เพิ่ม method post มาอีกอันนึง เอาไว้รับ refresh token จาก frontend
     // เช็คว่า token 30 นาที หมดอายุ แล้ว gen token ใหม่ขึ้นมา (เป็น token 30 นาที)
     // อย่าลืมเช็ค oid ให้มันตรงกัน
+    @PostMapping("/token")
+    public ResponseEntity<Object> refreshAccessToken(@RequestHeader("Authorization") String requestTokenHeader) {
+        String refreshToken = null;
+        Claims claims = null;
+
+        // ตรวจสอบว่า token ถูกส่งมาพร้อมกับ Bearer หรือไม่
+        if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
+            refreshToken = requestTokenHeader.substring(7);
+
+            try {
+                // ดึงข้อมูล claims จาก refresh token
+                claims = jwtTokenUtil.getAllClaimsFromToken(refreshToken);
+
+                // ตรวจสอบว่า refresh token หมดอายุหรือไม่
+                if (jwtTokenUtil.isTokenExpired(refreshToken)) {
+                    throw new UnauthorizedException("Refresh token has expired");
+                }
+
+                // ดึง oid (userId) จาก claims
+                String oidFromRefreshToken = claims.get("oid", String.class);
+
+                // ตรวจสอบว่าผู้ใช้ที่เรียกใช้ refresh token นี้มี oid ที่ตรงกัน
+                UserDetails userDetails = jwtUserDetailsService.loadUserByUsername(claims.getSubject());
+                if (userDetails != null) {
+                    AuthUser authUser = (AuthUser) userDetails;
+                    if (!authUser.getOid().equals(oidFromRefreshToken)) {
+                        throw new UnauthorizedException("Invalid userId in refresh token");
+                    }
+
+                    // สร้าง access token ใหม่ (อายุ 30 นาที) และส่งคืนให้ frontend
+                    String newAccessToken = jwtTokenUtil.generateToken(userDetails);
+                    return ResponseEntity.ok(new JwtResponseToken(newAccessToken));
+                }
+
+            } catch (ExpiredJwtException e) {
+                throw new UnauthorizedException("Refresh token has expired");
+            } catch (Exception e) {
+                throw new UnauthorizedException("Invalid refresh token");
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "JWT Token does not begin with Bearer String");
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+    }
+
 }
