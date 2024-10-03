@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,47 +28,43 @@ public class VisibilityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String requestURI = request.getRequestURI();
-
-        // Check if the request is targeting a board-related endpoint
         if (requestURI.matches("/v3/boards/([^/]+)(/.*)?")) {
             String boardId = requestURI.split("/")[3];
-
             Optional<BoardEntity> boardOptional = boardRepository.findById(boardId);
 
-            if (boardOptional.isPresent()) {
-                BoardEntity board = boardOptional.get();
-                String authorizationHeader = request.getHeader("Authorization");
+            String authorizationHeader = request.getHeader("Authorization");
+            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No token provided");
+                return;
+            }
 
-                //  board is PRIVATE
-                if (board.getVisibility() == Visibility.PRIVATE) {
-                    if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                        String jwtToken = authorizationHeader.substring(7);
+            String jwtToken = authorizationHeader.substring(7);
+            try {
+                String userIdFromToken = jwtTokenUtil.getUserIdFromToken(jwtToken);
 
-                        try {
-                            String userIdFromToken = jwtTokenUtil.getUserIdFromToken(jwtToken);
-
-                            //  not the board owner
-                            if (!board.getOwnerId().equals(userIdFromToken)) {
-                                response.sendError(HttpServletResponse.SC_FORBIDDEN, "You do not have permission to access this resource.");
-                                return;
-                            }
-                        } catch (Exception e) {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token.");
-                            return;
-                        }
-                    } else {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "You must be authenticated to access this resource.");
+                if (boardOptional.isPresent()) {
+                    BoardEntity board = boardOptional.get();
+                    if (!hasPermission(board, userIdFromToken)) {
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "You do not have permission to access this resource.");
                         return;
                     }
+                } else {
+                    response.sendError(HttpServletResponse.SC_NOT_FOUND, "Board not found.");
+                    return;
                 }
-
-                // public boards
-            } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Board not found.");
+            } catch (Exception e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token.");
                 return;
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean hasPermission(BoardEntity board, String userId) {
+        if (board.getVisibility() == Visibility.PUBLIC) {
+            return true;
+        }
+        return board.getOwnerId().equals(userId);
     }
 }

@@ -87,14 +87,19 @@ public class BoardService {
         }
     }
 
+    // แก้ pbi20 เพิ่มมา
     public void deleteBoard(String boardId, String ownerId) throws ItemNotFoundException, UnauthorizedException {
         Optional<BoardEntity> optionalBoard = boardRepository.findByIdAndOwnerId(boardId, ownerId);
         if (optionalBoard.isPresent()) {
+            if (!optionalBoard.get().getOwnerId().equals(ownerId)) {
+                throw new UnauthorizedException("You are not the owner of this board.");
+            }
             boardRepository.delete(optionalBoard.get());
         } else {
-            throw new ItemNotFoundException("Board not found or user does not an owner");
+            throw new ItemNotFoundException("Board not found or user does not own the board.");
         }
     }
+
 
     @Transactional
     public void updateBoard(String boardId, String ownerId, BoardEntity updatedBoard) throws ItemNotFoundException, UnauthorizedException {

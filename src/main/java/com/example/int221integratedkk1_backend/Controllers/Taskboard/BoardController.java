@@ -343,4 +343,8 @@ public class BoardController {
         String token = requestTokenHeader.substring(7);
         return jwtTokenUtil.getUserIdFromToken(token);
     }
+
+
+
+
 }
