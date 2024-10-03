@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 @Table(name = "users", schema = "itbkk_shared")
 public class UsersEntity {
-    @GeneratedValue(strategy = GenerationType.UUID)
+//    @GeneratedValue(strategy = GenerationType.UUID)
     @Id
     @Column(name = "oid")
     private String oid;

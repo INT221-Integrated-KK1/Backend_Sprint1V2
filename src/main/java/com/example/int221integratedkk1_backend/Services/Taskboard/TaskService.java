@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TaskService {
@@ -58,7 +59,9 @@ public class TaskService {
 
     public TaskEntity getTaskByIdAndBoard(Integer taskId, String boardId, String ownerId) {
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
+
                 .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
+
 
         return repository.findByIdAndBoard_Id(taskId, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
@@ -117,5 +120,8 @@ public class TaskService {
 
         repository.delete(task);
         return true;
+    }
+    public Optional<TaskEntity> findById(Integer taskId) {
+        return repository.findById(taskId);
     }
 }
