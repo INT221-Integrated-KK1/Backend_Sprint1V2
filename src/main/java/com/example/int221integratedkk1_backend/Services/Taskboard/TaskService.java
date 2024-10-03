@@ -59,7 +59,9 @@ public class TaskService {
 
     public TaskEntity getTaskByIdAndBoard(Integer taskId, String boardId, String ownerId) {
         boardRepository.findByIdAndOwnerId(boardId, ownerId)
+
                 .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
+
 
         return repository.findByIdAndBoard_Id(taskId, boardId)
                 .orElseThrow(() -> new ItemNotFoundException("Task not found in this board"));
