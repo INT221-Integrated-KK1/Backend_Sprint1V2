@@ -8,6 +8,7 @@ import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -33,7 +34,7 @@ public class JwtUserDetailsService implements UserDetailsService {
         List<GrantedAuthority> roles = new ArrayList<>();
         GrantedAuthority grantedAuthority = () -> users.getRole().toString();
         roles.add(grantedAuthority);
-
+        roles.add(new SimpleGrantedAuthority("PUBLIC"));
         return new AuthUser(users.getUsername(), users.getPassword(), roles,
                 users.getOid(), users.getEmail(), users.getRole(), users.getName());
     }

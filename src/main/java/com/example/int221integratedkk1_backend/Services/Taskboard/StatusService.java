@@ -31,16 +31,16 @@ public class StatusService {
 
     public List<StatusEntity> getStatusesByBoard(String boardId, String ownerId) throws UnauthorizedException {
 
-        boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
+//        boardRepository.findByIdAndOwnerId(boardId, ownerId)
+//                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         return statusRepository.findByBoard_Id(boardId);
     }
 
 
     public StatusEntity getStatusByIdAndBoard(int statusId, String boardId, String ownerId) throws ItemNotFoundException, UnauthorizedException {
-        boardRepository.findByIdAndOwnerId(boardId, ownerId)
-                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
+//        boardRepository.findByIdAndOwnerId(boardId, ownerId)
+//                .orElseThrow(() -> new ItemNotFoundException("Board not found or user does not an owner"));
 
         return statusRepository.findById(statusId)
                 .orElseThrow(() -> new ItemNotFoundException("Status " + statusId + " not found in this board"));

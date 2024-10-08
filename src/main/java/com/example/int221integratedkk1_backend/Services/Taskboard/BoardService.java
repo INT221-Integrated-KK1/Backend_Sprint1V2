@@ -43,14 +43,18 @@ public class BoardService {
         board.setBoardName(boardRequest.getName());
         board.setOwnerId(ownerId);
 
-
+        // Overriding to ensure it is always PRIVATE
         board.setVisibility(Visibility.PRIVATE);
 
+        System.out.println("Visibility before save: " + board.getVisibility());
         boardRepository.save(board);
+        System.out.println("Visibility after save: " + board.getVisibility());
+
         createDefaultStatuses(board);
 
         return board;
     }
+
 
 
 
