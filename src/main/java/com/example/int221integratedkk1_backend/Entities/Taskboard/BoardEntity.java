@@ -30,4 +30,5 @@ public class BoardEntity {
     @Column(name = "visibility", nullable = false)
     @Enumerated(EnumType.STRING)
     private Visibility visibility = Visibility.PRIVATE;
+
 }

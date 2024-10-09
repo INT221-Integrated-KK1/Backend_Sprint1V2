@@ -47,13 +47,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token");
                 return;
             }
-        } else {
-            // No token provided
-            if (isSecuredEndpoint(request)) {
-                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is missing");
-                return;
-            }
         }
+//        else {
+//            // No token provided
+//            if (isSecuredEndpoint(request)) {
+//                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is missing");
+//                return;
+//            }
+//        }
 
         // Once we get the token validate it.
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

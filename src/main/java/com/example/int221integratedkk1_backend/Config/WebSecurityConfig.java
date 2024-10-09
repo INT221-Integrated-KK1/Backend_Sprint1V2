@@ -6,6 +6,7 @@ import com.example.int221integratedkk1_backend.Services.Account.JwtUserDetailsSe
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -41,13 +42,15 @@ public class WebSecurityConfig {
         httpSecurity.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/error","/login").permitAll()
+                        .requestMatchers(HttpMethod.GET).hasAuthority("PUBLIC")
                         .requestMatchers("/v3/boards/**").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
-                .addFilterBefore(visibilityFilter, UsernamePasswordAuthenticationFilter.class) // Add visibility filter
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);   // Add JWT filter
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)   // Add JWT filter
+                .addFilterAfter(visibilityFilter, JwtAuthFilter.class); // Add visibility filter
+
 
         return httpSecurity.build();
     }
