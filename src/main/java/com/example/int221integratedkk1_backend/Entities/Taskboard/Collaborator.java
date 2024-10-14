@@ -1,4 +1,4 @@
-package com.example.int221integratedkk1_backend.Entities.Account;
+package com.example.int221integratedkk1_backend.Entities.Taskboard;
 
 import jakarta.persistence.*;
 import lombok.Getter;

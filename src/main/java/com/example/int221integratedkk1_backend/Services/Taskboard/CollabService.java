@@ -1,14 +1,15 @@
-package com.example.int221integratedkk1_backend.Services.Account;
+package com.example.int221integratedkk1_backend.Services.Taskboard;
 
 import com.example.int221integratedkk1_backend.DTOS.CollabDTO;
 import com.example.int221integratedkk1_backend.DTOS.CollabRequest;
-import com.example.int221integratedkk1_backend.Entities.Account.Collaborator;
+import com.example.int221integratedkk1_backend.Entities.Taskboard.Collaborator;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import com.example.int221integratedkk1_backend.Exception.CollaboratorAlreadyExistsException;
 import com.example.int221integratedkk1_backend.Exception.ItemNotFoundException;
-import com.example.int221integratedkk1_backend.Repositories.Account.CollabRepository;
+import com.example.int221integratedkk1_backend.Repositories.Taskboard.CollabRepository;
 import com.example.int221integratedkk1_backend.Repositories.Taskboard.BoardRepository;
 import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
+import com.example.int221integratedkk1_backend.Services.Account.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,6 @@
 package com.example.int221integratedkk1_backend.DTOS;
 
-import com.example.int221integratedkk1_backend.Entities.Account.AccessRight;
+import com.example.int221integratedkk1_backend.Entities.Taskboard.AccessRight;
 import lombok.Getter;
 import lombok.Setter;
 

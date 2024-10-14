@@ -1,8 +1,8 @@
 package com.example.int221integratedkk1_backend.Controllers.Taskboard;
 
 import com.example.int221integratedkk1_backend.DTOS.*;
-import com.example.int221integratedkk1_backend.Entities.Account.AccessRight;
-import com.example.int221integratedkk1_backend.Entities.Account.Collaborator;
+import com.example.int221integratedkk1_backend.Entities.Taskboard.AccessRight;
+import com.example.int221integratedkk1_backend.Entities.Taskboard.Collaborator;
 import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
 import com.example.int221integratedkk1_backend.Entities.Account.Visibility;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
@@ -11,7 +11,7 @@ import com.example.int221integratedkk1_backend.Entities.Taskboard.TaskEntity;
 import com.example.int221integratedkk1_backend.Exception.CollaboratorAlreadyExistsException;
 import com.example.int221integratedkk1_backend.Exception.EmptyRequestBodyException;
 import com.example.int221integratedkk1_backend.Exception.UnauthorizedException;
-import com.example.int221integratedkk1_backend.Services.Account.CollabService;
+import com.example.int221integratedkk1_backend.Services.Taskboard.CollabService;
 import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
 import com.example.int221integratedkk1_backend.Services.Account.UserService;
 import com.example.int221integratedkk1_backend.Services.Taskboard.*;
