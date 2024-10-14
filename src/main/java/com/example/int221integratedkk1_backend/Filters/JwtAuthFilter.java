@@ -80,11 +80,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    private boolean isSecuredEndpoint(HttpServletRequest request) {
-        // Define your secured endpoints here
-        String path = request.getRequestURI();
-        return path.startsWith("/v3/boards/");
-    }
+//    private boolean isSecuredEndpoint(HttpServletRequest request) {
+//        // Define your secured endpoints here
+//        String path = request.getRequestURI();
+//        return path.startsWith("/v3/boards/");
+//    }
 
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);

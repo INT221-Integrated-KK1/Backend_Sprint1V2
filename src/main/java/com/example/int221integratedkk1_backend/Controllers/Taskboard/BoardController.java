@@ -1,21 +1,20 @@
 package com.example.int221integratedkk1_backend.Controllers.Taskboard;
 
-
-import com.example.int221integratedkk1_backend.DTOS.BoardRequest;
-import com.example.int221integratedkk1_backend.DTOS.BoardResponse;
-import com.example.int221integratedkk1_backend.DTOS.TaskDTO;
-import com.example.int221integratedkk1_backend.DTOS.TaskRequest;
+import com.example.int221integratedkk1_backend.DTOS.*;
+import com.example.int221integratedkk1_backend.Entities.Account.AccessRight;
+import com.example.int221integratedkk1_backend.Entities.Account.Collaborator;
 import com.example.int221integratedkk1_backend.Entities.Account.UsersEntity;
 import com.example.int221integratedkk1_backend.Entities.Account.Visibility;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.StatusEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.TaskEntity;
+import com.example.int221integratedkk1_backend.Exception.CollaboratorAlreadyExistsException;
 import com.example.int221integratedkk1_backend.Exception.EmptyRequestBodyException;
+import com.example.int221integratedkk1_backend.Exception.UnauthorizedException;
+import com.example.int221integratedkk1_backend.Services.Account.CollabService;
 import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
 import com.example.int221integratedkk1_backend.Services.Account.UserService;
-import com.example.int221integratedkk1_backend.Services.Taskboard.BoardService;
-import com.example.int221integratedkk1_backend.Services.Taskboard.StatusService;
-import com.example.int221integratedkk1_backend.Services.Taskboard.TaskService;
+import com.example.int221integratedkk1_backend.Services.Taskboard.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,7 +27,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 @RestController
 @RequestMapping("/v3/boards")
@@ -48,33 +46,36 @@ public class BoardController {
     private StatusService statusService;
 
     @Autowired
+    private CollabService collabService;
+
+    @Autowired
     private UserService userService;
 
     private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
 
-
-
+    // Get all boards (including collaboration boards)
     @GetMapping("")
-    public ResponseEntity<List<BoardResponse>> getAllBoards(@RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
+    public ResponseEntity<List<BoardResponse>> getAllBoards(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
         String ownerId = getUserIdFromToken(requestTokenHeader);
         List<BoardEntity> boards = boardService.getUserBoards(ownerId);
         List<BoardResponse> boardResponses = boards.stream().map(boardEntity -> {
             BoardResponse response = new BoardResponse();
             response.setId(boardEntity.getId());
             response.setName(boardEntity.getBoardName());
+            response.setVisibility(boardEntity.getVisibility().name().toLowerCase());
             UsersEntity owner = userService.findUserById(boardEntity.getOwnerId());
             BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
             response.setOwner(ownerDTO);
-            // Log the visibility of the board
-            logger.info("In getAllBoards => Board ID: {}, Visibility: {}", boardEntity.getId(), boardEntity.getVisibility());
+            logger.info("Board ID: {}, Visibility: {}", boardEntity.getId(), boardEntity.getVisibility());
             return response;
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(boardResponses);
     }
 
+    // Create a new board
     @PostMapping("")
-    public ResponseEntity<BoardResponse> createBoard(@RequestHeader(value = "Authorization",required = false) String requestTokenHeader,
+    public ResponseEntity<BoardResponse> createBoard(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
                                                      @Valid @RequestBody(required = false) BoardRequest boardRequest) {
         if (boardRequest == null || boardRequest.getName() == null || boardRequest.getName().trim().isEmpty()) {
             throw new EmptyRequestBodyException("Request body is missing or board name is empty.");
@@ -86,43 +87,32 @@ public class BoardController {
         BoardResponse boardResponse = new BoardResponse();
         boardResponse.setId(createdBoard.getId());
         boardResponse.setName(createdBoard.getBoardName());
-
+        boardResponse.setVisibility(createdBoard.getVisibility().name().toLowerCase());
         UsersEntity owner = userService.findUserById(createdBoard.getOwnerId());
         BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
         boardResponse.setOwner(ownerDTO);
 
-        // Log the visibility of the created board
-        logger.info("In createBoard => Created Board ID: {}, Visibility: {}", createdBoard.getId(), createdBoard.getVisibility());
-
-        return ResponseEntity.status(201).body(boardResponse);
+        logger.info("Created Board ID: {}, Visibility: {}", createdBoard.getId(), createdBoard.getVisibility());
+        return ResponseEntity.status(HttpStatus.CREATED).body(boardResponse);
     }
 
+    // Get a specific board by ID
     @GetMapping("/{boardId}")
     public ResponseEntity<BoardResponse> getBoardById(@PathVariable String boardId,
-                                                      @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-//        String ownerId = getUserIdFromToken(requestTokenHeader);
-
-        // Fetch the current board
+                                                      @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
         BoardEntity board = boardService.getBoardById(boardId);
-
-        // Retrieve previous visibility from the board entity (assuming you have a method for that)
-        String previousVisibility = board.getVisibility().name().toLowerCase(); // Get previous visibility here
+        String previousVisibility = board.getVisibility().name().toLowerCase();
 
         BoardResponse boardResponse = new BoardResponse();
         boardResponse.setId(board.getId());
         boardResponse.setName(board.getBoardName());
+        boardResponse.setVisibility(board.getVisibility().name().toLowerCase());
 
-        // Get the current visibility
-        String currentVisibility = board.getVisibility().name().toLowerCase();
-        boardResponse.setVisibility(currentVisibility);
+        logger.info("Fetched Board ID: {}, Visibility: {}", board.getId(), board.getVisibility());
 
-        // Log the visibility when fetching the board
-        logger.info("Get Board by ID => Fetched Board ID: {}, Visibility: {}", board.getId(), currentVisibility);
-
-        // Check if the visibility has changed
-        if (!currentVisibility.equals(previousVisibility)) {
+        if (!board.getVisibility().name().toLowerCase().equals(previousVisibility)) {
             logger.info("Visibility changed for Board ID: {}. Previous Visibility: {}, Current Visibility: {}",
-                    board.getId(), previousVisibility, currentVisibility);
+                    board.getId(), previousVisibility, board.getVisibility().name().toLowerCase());
         }
 
         UsersEntity owner = userService.findUserById(board.getOwnerId());
@@ -132,199 +122,10 @@ public class BoardController {
         return ResponseEntity.ok(boardResponse);
     }
 
-
-    @PutMapping("/{boardId}")
-    public ResponseEntity<String> updateBoard(@PathVariable String boardId,
-                                              @RequestHeader(value = "Authorization",required = false) String requestTokenHeader,
-                                              @Valid @RequestBody BoardEntity boardEntity) {
-        String ownerId = getUserIdFromToken(requestTokenHeader);
-        boardService.updateBoard(boardId, ownerId, boardEntity);
-        // Log the visibility after updating the board
-        logger.info("In Update Board Updated Board ID: {}, New Visibility: {}", boardId, boardEntity.getVisibility());
-        return ResponseEntity.ok("Board updated successfully");
-    }
-
-
-    @DeleteMapping("/{boardId}")
-    public ResponseEntity<String> deleteBoard(@PathVariable String boardId,
-                                              @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-        String ownerId = getUserIdFromToken(requestTokenHeader);
-        boardService.deleteBoard(boardId, ownerId);
-        return ResponseEntity.ok("Board deleted successfully");
-    }
-
-    // task
-    @GetMapping("/{boardId}/tasks")
-    public ResponseEntity<List<TaskDTO>> getAllTasks(@PathVariable String boardId,
-                                                     @RequestParam(required = false) List<String> filterStatuses,
-                                                     @RequestParam(defaultValue = "status.name") String sortBy,
-                                                     @RequestParam(defaultValue = "asc") String sortDirection,
-                                                     @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-//        String userName = getUserIdFromToken(requestTokenHeader);
-        List<TaskDTO> tasks = taskService.getAllTasks(boardId, filterStatuses, sortBy, sortDirection, "");
-        return ResponseEntity.ok(tasks);
-    }
-
-    @PostMapping("/{boardId}/tasks")
-    public ResponseEntity<?> createTask(@PathVariable String boardId,
-                                        @Valid @RequestBody(required = false) TaskRequest taskRequest,
-                                        @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) throws Throwable {
-        if (taskRequest == null || taskRequest.getTitle() == null || taskRequest.getTitle().trim().isEmpty() || taskRequest.getStatus() == null) {
-            return ResponseEntity.badRequest().body("Invalid task request body.");
-        }
-
-
-        String ownerId = getUserIdFromToken(requestTokenHeader);
-
-        TaskEntity createdTask = taskService.createTask(boardId, taskRequest, ownerId);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
-    }
-
-
-    @GetMapping("/{boardId}/tasks/{taskId}")
-    public ResponseEntity<TaskEntity> getTaskById(@PathVariable String boardId,
-                                                  @PathVariable Integer taskId,
-                                                  @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-//        String userName = getUserIdFromToken(requestTokenHeader);
-        TaskEntity task = taskService.getTaskByIdAndBoard(taskId, boardId, "");
-        return ResponseEntity.ok(task);
-    }
-
-    @PutMapping("/{boardId}/tasks/{taskId}")
-    public ResponseEntity<?> updateTask(@PathVariable String boardId,
-                                        @PathVariable Integer taskId,
-                                        @Valid @RequestBody(required = false) TaskRequest taskRequest,
-                                        @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) throws Throwable {
-        if (taskRequest == null || taskRequest.getTitle() == null || taskRequest.getTitle().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid task update request body."); // 400 Bad Request
-        }
-
-//        String ownerId = getUserIdFromToken(requestTokenHeader);
-
-        BoardEntity board = boardService.getBoardById(boardId);
-
-        if (board == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Board not found"); // 404 Not Found
-        }
-
-        if (board.getVisibility() == Visibility.PRIVATE) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to update tasks on this board."); // 403 Forbidden
-        }
-
-        Optional<TaskEntity> existingTask = taskService.findById(taskId);
-
-        if (existingTask.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found."); // 404 Not Found
-        }
-
-        TaskEntity updatedTask = taskService.updateTask(taskId, boardId, taskRequest,"");
-        return ResponseEntity.ok(updatedTask);
-    }
-
-
-    @DeleteMapping("/{boardId}/tasks/{taskId}")
-    public ResponseEntity<String> deleteTask(@PathVariable String boardId,
-                                             @PathVariable Integer taskId,
-                                             @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-        String userName = getUserIdFromToken(requestTokenHeader);
-        taskService.deleteTask(taskId, boardId, userName);
-        return ResponseEntity.ok("Task deleted successfully");
-    }
-
-    // status
-    @GetMapping("/{boardId}/statuses")
-    public ResponseEntity<List<StatusEntity>> getAllStatuses(@PathVariable String boardId,
-                                                             @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-//        String userName = getUserIdFromToken(requestTokenHeader);
-        List<StatusEntity> statuses = statusService.getStatusesByBoard(boardId, "");
-        return ResponseEntity.ok(statuses);
-    }
-
-    @PostMapping("/{boardId}/statuses")
-    public ResponseEntity<?> createStatus(@PathVariable String boardId,
-                                          @RequestHeader(value = "Authorization",required = false) String requestTokenHeader,
-                                          @Valid @RequestBody(required = false) StatusEntity statusEntity) {
-        if (statusEntity == null || statusEntity.getName() == null || statusEntity.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid status request body."); // 400 Bad Request
-        }
-
-        String ownerId = getUserIdFromToken(requestTokenHeader);
-
-        BoardEntity board = boardService.getBoardById(boardId);
-
-        if (board == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Board not found"); // 404 Not Found
-        }
-
-        if (board.getVisibility() == Visibility.PRIVATE && !board.getOwnerId().equals(ownerId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to add status to this board."); // 403 Forbidden
-        }
-
-        StatusEntity createdStatus = statusService.createStatus(boardId, ownerId, statusEntity);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdStatus);
-    }
-
-
-    @GetMapping("/{boardId}/statuses/{statusId}")
-    public ResponseEntity<StatusEntity> getStatusById(@PathVariable String boardId,
-                                                      @PathVariable Integer statusId,
-                                                      @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-//        String userName = getUserIdFromToken(requestTokenHeader);
-        StatusEntity status = statusService.getStatusByIdAndBoard(statusId, boardId, "");
-        return ResponseEntity.ok(status);
-    }
-
-    @PutMapping("/{boardId}/statuses/{statusId}")
-    public ResponseEntity<?> updateStatus(@PathVariable String boardId,
-                                          @PathVariable Integer statusId,
-                                          @RequestHeader(value = "Authorization",required = false) String requestTokenHeader,
-                                          @Valid @RequestBody(required = false) StatusEntity updatedStatus) {
-
-        if (updatedStatus == null || updatedStatus.getName() == null || updatedStatus.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid status update request body."); // 400 Bad Request
-        }
-
-        String ownerId = getUserIdFromToken(requestTokenHeader);
-
-        BoardEntity board = boardService.getBoardById(boardId);
-
-        if (board == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Board not found"); // 404 Not Found
-        }
-
-        if (board.getVisibility() == Visibility.PRIVATE && !board.getOwnerId().equals(ownerId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to update status on this board."); // 403 Forbidden
-        }
-
-        StatusEntity updatedEntity = statusService.updateStatus(statusId, boardId, ownerId, updatedStatus);
-
-        return ResponseEntity.ok(updatedEntity);
-    }
-
-
-    @DeleteMapping("/{boardId}/statuses/{statusId}")
-    public ResponseEntity<String> deleteStatus(@PathVariable String boardId,
-                                               @PathVariable Integer statusId,
-                                               @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-        String userName = getUserIdFromToken(requestTokenHeader);
-        statusService.deleteStatus(statusId, boardId, userName);
-        return ResponseEntity.ok("Status deleted successfully");
-    }
-
-    @DeleteMapping("/{boardId}/statuses/{statusId}/{newId}")
-    public ResponseEntity<String> deleteStatusAndReplace(@PathVariable String boardId,
-                                                         @PathVariable Integer statusId,
-                                                         @PathVariable Integer newId,
-                                                         @RequestHeader(value = "Authorization",required = false) String requestTokenHeader) {
-        String userName = getUserIdFromToken(requestTokenHeader);
-        statusService.transferTasksAndDeleteStatus(statusId, newId, boardId, userName);
-        return ResponseEntity.ok("Status replaced and deleted successfully");
-    }
-
+    // Update board visibility
     @PatchMapping("/{boardId}")
     public ResponseEntity<?> updateBoardVisibility(@PathVariable String boardId,
-                                                   @RequestHeader(value = "Authorization",required = false) String requestTokenHeader,
+                                                   @RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
                                                    @RequestBody(required = false) Map<String, String> body) {
         if (body == null || !body.containsKey("visibility")) {
             return ResponseEntity.badRequest().body("Missing 'visibility' field.");
@@ -335,24 +136,14 @@ public class BoardController {
             return ResponseEntity.badRequest().body("Invalid visibility value.");
         }
 
-
         String ownerId = getUserIdFromToken(requestTokenHeader);
-
-
         BoardEntity board = boardService.getBoardById(boardId);
-        if (board == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Board not found"); // 404 Not Found
-        }
-
-
         if (!board.getOwnerId().equals(ownerId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to change visibility."); // 403 Forbidden
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to change visibility.");
         }
-
 
         board.setVisibility(Visibility.valueOf(visibilityValue.toUpperCase()));
         boardService.updateBoardVisibility(board);
-
 
         BoardResponse boardResponse = new BoardResponse();
         boardResponse.setId(board.getId());
@@ -366,11 +157,217 @@ public class BoardController {
         return ResponseEntity.ok(boardResponse);
     }
 
+    // Task Management
 
+    @GetMapping("/{boardId}/tasks")
+    public ResponseEntity<List<TaskDTO>> getAllTasks(@PathVariable String boardId,
+                                                     @RequestParam(required = false) List<String> filterStatuses,
+                                                     @RequestParam(defaultValue = "status.name") String sortBy,
+                                                     @RequestParam(defaultValue = "asc") String sortDirection,
+                                                     @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+        List<TaskDTO> tasks = taskService.getAllTasks(boardId, filterStatuses, sortBy, sortDirection, "");
+        return ResponseEntity.ok(tasks);
+    }
+
+    @PostMapping("/{boardId}/tasks")
+    public ResponseEntity<?> createTask(@PathVariable String boardId,
+                                        @Valid @RequestBody(required = false) TaskRequest taskRequest,
+                                        @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) throws Throwable {
+        if (taskRequest == null || taskRequest.getTitle() == null || taskRequest.getTitle().trim().isEmpty() || taskRequest.getStatus() == null) {
+            return ResponseEntity.badRequest().body("Invalid task request body.");
+        }
+
+        String ownerId = getUserIdFromToken(requestTokenHeader);
+        TaskEntity createdTask = taskService.createTask(boardId, taskRequest, ownerId);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    }
+
+    @GetMapping("/{boardId}/tasks/{taskId}")
+    public ResponseEntity<TaskEntity> getTaskById(@PathVariable String boardId,
+                                                  @PathVariable Integer taskId,
+                                                  @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+        TaskEntity task = taskService.getTaskByIdAndBoard(taskId, boardId, "");
+        return ResponseEntity.ok(task);
+    }
+
+    @PutMapping("/{boardId}/tasks/{taskId}")
+    public ResponseEntity<?> updateTask(@PathVariable String boardId,
+                                        @PathVariable Integer taskId,
+                                        @Valid @RequestBody(required = false) TaskRequest taskRequest,
+                                        @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) throws Throwable {
+        if (taskRequest == null || taskRequest.getTitle() == null || taskRequest.getTitle().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid task update request body.");
+        }
+
+        BoardEntity board = boardService.getBoardById(boardId);
+        if (board.getVisibility() == Visibility.PRIVATE) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to update tasks on this board.");
+        }
+
+        Optional<TaskEntity> existingTask = taskService.findById(taskId);
+        if (existingTask.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task not found.");
+        }
+
+        TaskEntity updatedTask = taskService.updateTask(taskId, boardId, taskRequest, "");
+        return ResponseEntity.ok(updatedTask);
+    }
+
+    @DeleteMapping("/{boardId}/tasks/{taskId}")
+    public ResponseEntity<String> deleteTask(@PathVariable String boardId,
+                                             @PathVariable Integer taskId,
+                                             @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+        String userName = getUserIdFromToken(requestTokenHeader);
+        taskService.deleteTask(taskId, boardId, userName);
+        return ResponseEntity.ok("Task deleted successfully");
+    }
+
+    // Status Management
+
+    @GetMapping("/{boardId}/statuses")
+    public ResponseEntity<List<StatusEntity>> getAllStatuses(@PathVariable String boardId,
+                                                             @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+        List<StatusEntity> statuses = statusService.getStatusesByBoard(boardId, "");
+        return ResponseEntity.ok(statuses);
+    }
+
+    @PostMapping("/{boardId}/statuses")
+    public ResponseEntity<?> createStatus(@PathVariable String boardId,
+                                          @RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
+                                          @Valid @RequestBody(required = false) StatusEntity statusEntity) {
+        if (statusEntity == null || statusEntity.getName() == null || statusEntity.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid status request body.");
+        }
+
+        String ownerId = getUserIdFromToken(requestTokenHeader);
+        BoardEntity board = boardService.getBoardById(boardId);
+
+        if (board.getVisibility() == Visibility.PRIVATE && !board.getOwnerId().equals(ownerId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to add status to this board.");
+        }
+
+        StatusEntity createdStatus = statusService.createStatus(boardId, ownerId, statusEntity);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdStatus);
+    }
+
+    @GetMapping("/{boardId}/statuses/{statusId}")
+    public ResponseEntity<StatusEntity> getStatusById(@PathVariable String boardId,
+                                                      @PathVariable Integer statusId,
+                                                      @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+        StatusEntity status = statusService.getStatusByIdAndBoard(statusId, boardId, "");
+        return ResponseEntity.ok(status);
+    }
+
+    @PutMapping("/{boardId}/statuses/{statusId}")
+    public ResponseEntity<?> updateStatus(@PathVariable String boardId,
+                                          @PathVariable Integer statusId,
+                                          @RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
+                                          @Valid @RequestBody(required = false) StatusEntity updatedStatus) {
+        if (updatedStatus == null || updatedStatus.getName() == null || updatedStatus.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid status update request body.");
+        }
+
+        String ownerId = getUserIdFromToken(requestTokenHeader);
+        BoardEntity board = boardService.getBoardById(boardId);
+
+        if (board.getVisibility() == Visibility.PRIVATE && !board.getOwnerId().equals(ownerId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to update status on this board.");
+        }
+
+        StatusEntity updatedEntity = statusService.updateStatus(statusId, boardId, ownerId, updatedStatus);
+        return ResponseEntity.ok(updatedEntity);
+    }
+
+    @DeleteMapping("/{boardId}/statuses/{statusId}")
+    public ResponseEntity<String> deleteStatus(@PathVariable String boardId,
+                                               @PathVariable Integer statusId,
+                                               @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+        String userName = getUserIdFromToken(requestTokenHeader);
+        statusService.deleteStatus(statusId, boardId, userName);
+        return ResponseEntity.ok("Status deleted successfully");
+    }
+
+    // Collaborator Management
+
+    @GetMapping("/{boardId}/collabs")
+    public ResponseEntity<List<CollabDTO>> getCollaborators(@PathVariable String boardId,
+                                                            @RequestHeader("Authorization") String requestTokenHeader) {
+        String ownerId = getUserIdFromToken(requestTokenHeader);
+        BoardEntity board = boardService.getBoardById(boardId);
+
+        if (!isOwnerOrCollaborator(board, ownerId)) {
+            throw new UnauthorizedException("You are not authorized to view collaborators of this board");
+        }
+
+        List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
+        return ResponseEntity.ok(collaborators);
+    }
+
+    @GetMapping("/{boardId}/collabs/{collabId}")
+    public ResponseEntity<CollabDTO> getCollaboratorById(@PathVariable String boardId,
+                                                         @PathVariable String collabId,
+                                                         @RequestHeader("Authorization") String requestTokenHeader) {
+        String ownerId = getUserIdFromToken(requestTokenHeader);
+        BoardEntity board = boardService.getBoardById(boardId);
+
+        if (!isOwnerOrCollaborator(board, ownerId)) {
+            throw new UnauthorizedException("You are not authorized to view this collaborator");
+        }
+
+        // Use the correct method to find the collaborator by boardId and collabId
+        Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollabId(boardId, collabId);
+        if (collaborator.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        Collaborator collab = collaborator.get();
+        CollabDTO collabDTO = new CollabDTO();
+        collabDTO.setOid(collab.getCollaboratorId());
+        collabDTO.setName(collab.getCollaboratorName());
+        collabDTO.setEmail(collab.getCollaboratorEmail());
+        collabDTO.setAccessRight(collab.getAccessLevel());
+        collabDTO.setAddedOn(collab.getAddedOn());
+
+        return ResponseEntity.ok(collabDTO);
+    }
+    @PostMapping("/{boardId}/collabs")
+    public ResponseEntity<?> addCollaborator(@PathVariable String boardId,
+                                             @RequestHeader("Authorization") String requestTokenHeader,
+                                             @RequestBody @Valid CollabDTO collabDTO) {
+        String ownerId = getUserIdFromToken(requestTokenHeader);
+        BoardEntity board = boardService.getBoardById(boardId);
+
+        if (!board.getOwnerId().equals(ownerId)) {
+            throw new UnauthorizedException("You are not authorized to add collaborators to this board.");
+        }
+
+        if (collabDTO.getAccessRight() == null || !(collabDTO.getAccessRight().equals(AccessRight.READ) || collabDTO.getAccessRight().equals(AccessRight.WRITE))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid access right.");
+        }
+
+        if (collabService.isCollaborator(boardId, collabDTO.getOid())) {
+            throw new CollaboratorAlreadyExistsException("Collaborator already exists.");
+        }
+
+        // Convert CollabDTO to CollabRequest
+        CollabRequest collabRequest = new CollabRequest();
+        collabRequest.setEmail(collabDTO.getEmail());
+        collabRequest.setAccessRight(collabDTO.getAccessRight());
+
+        // Use the converted CollabRequest
+        Collaborator collaborator = collabService.addCollaborator(boardId, collabRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(collaborator);
+    }
+
+
+    // Helper Methods
     private String getUserIdFromToken(String requestTokenHeader) {
         String token = requestTokenHeader.substring(7);
         return jwtTokenUtil.getUserIdFromToken(token);
     }
 
-
+    private boolean isOwnerOrCollaborator(BoardEntity board, String userId) {
+        return board.getOwnerId().equals(userId) || collabService.isCollaborator(board.getId(), userId);
+    }
 }

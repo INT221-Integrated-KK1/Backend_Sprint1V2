@@ -15,4 +15,9 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ItemNotFoundException("User not found"));
     }
+
+    public UsersEntity findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ItemNotFoundException("User with email " + email + " not found"));
+    }
 }
