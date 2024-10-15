@@ -8,7 +8,6 @@ import com.example.int221integratedkk1_backend.Entities.Account.Visibility;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.BoardEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.StatusEntity;
 import com.example.int221integratedkk1_backend.Entities.Taskboard.TaskEntity;
-import com.example.int221integratedkk1_backend.Exception.CollaboratorAlreadyExistsException;
 import com.example.int221integratedkk1_backend.Exception.EmptyRequestBodyException;
 import com.example.int221integratedkk1_backend.Exception.UnauthorizedException;
 import com.example.int221integratedkk1_backend.Services.Taskboard.CollabService;
@@ -21,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,11 +54,36 @@ public class BoardController {
     private static final Logger logger = LoggerFactory.getLogger(BoardController.class);
 
     // Get all boards (including collaboration boards)
+//    @GetMapping("")
+//    public ResponseEntity<List<BoardResponse>> getAllBoards(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+//        String ownerId = getUserIdFromToken(requestTokenHeader);
+//        List<BoardEntity> boards = boardService.getUserBoards(ownerId);
+//        List<BoardResponse> boardResponses = boards.stream().map(boardEntity -> {
+//            BoardResponse response = new BoardResponse();
+//            response.setId(boardEntity.getId());
+//            response.setName(boardEntity.getBoardName());
+//            response.setVisibility(boardEntity.getVisibility().name().toLowerCase());
+//            UsersEntity owner = userService.findUserById(boardEntity.getOwnerId());
+//            BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
+//            response.setOwner(ownerDTO);
+//            List<CollabDTO> collaborators = collabService.getCollaborators(boardEntity.getId());
+//            response.setCollaborators(collaborators);
+//            logger.info("Board ID: {}, Visibility: {}", boardEntity.getId(), boardEntity.getVisibility());
+//            return response;
+//        }).collect(Collectors.toList());
+//
+//        return ResponseEntity.ok(boardResponses);
+//    }
     @GetMapping("")
-    public ResponseEntity<List<BoardResponse>> getAllBoards(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+    public ResponseEntity<Map<String, Object>> getAllBoards(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
+
         String ownerId = getUserIdFromToken(requestTokenHeader);
-        List<BoardEntity> boards = boardService.getUserBoards(ownerId);
-        List<BoardResponse> boardResponses = boards.stream().map(boardEntity -> {
+
+        List<BoardEntity> personalBoards = boardService.getUserBoards(ownerId);
+
+        List<BoardEntity> collabBoards = collabService.getBoardsWhereUserIsCollaborator(ownerId);
+
+        List<BoardResponse> personalBoardResponses = personalBoards.stream().map(boardEntity -> {
             BoardResponse response = new BoardResponse();
             response.setId(boardEntity.getId());
             response.setName(boardEntity.getBoardName());
@@ -66,12 +91,37 @@ public class BoardController {
             UsersEntity owner = userService.findUserById(boardEntity.getOwnerId());
             BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
             response.setOwner(ownerDTO);
+
+            List<CollabDTO> collaborators = collabService.getCollaborators(boardEntity.getId());
+            response.setCollaborators(collaborators);
+
             logger.info("Board ID: {}, Visibility: {}", boardEntity.getId(), boardEntity.getVisibility());
             return response;
         }).collect(Collectors.toList());
 
-        return ResponseEntity.ok(boardResponses);
+        List<BoardResponse> collabBoardResponses = collabBoards.stream().map(boardEntity -> {
+            BoardResponse response = new BoardResponse();
+            response.setId(boardEntity.getId());
+            response.setName(boardEntity.getBoardName());
+            response.setVisibility(boardEntity.getVisibility().name().toLowerCase());
+            UsersEntity owner = userService.findUserById(boardEntity.getOwnerId());
+            BoardResponse.OwnerDTO ownerDTO = new BoardResponse.OwnerDTO(owner.getOid(), owner.getName());
+            response.setOwner(ownerDTO);
+
+            List<CollabDTO> collaborators = collabService.getCollaborators(boardEntity.getId());
+            response.setCollaborators(collaborators);
+
+            logger.info("Collab Board ID: {}, Visibility: {}", boardEntity.getId(), boardEntity.getVisibility());
+            return response;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("personalBoards", personalBoardResponses);
+        responseBody.put("collabBoards", collabBoardResponses);
+
+        return ResponseEntity.ok(responseBody);
     }
+
 
     // Create a new board
     @PostMapping("")
@@ -158,7 +208,6 @@ public class BoardController {
     }
 
     // Task Management
-
     @GetMapping("/{boardId}/tasks")
     public ResponseEntity<List<TaskDTO>> getAllTasks(@PathVariable String boardId,
                                                      @RequestParam(required = false) List<String> filterStatuses,
@@ -288,35 +337,75 @@ public class BoardController {
         return ResponseEntity.ok("Status deleted successfully");
     }
 
-    // Collaborator Management
+
+//    @GetMapping("/{boardId}/collabs")
+//    public ResponseEntity<List<CollabDTO>> getCollaborators(@PathVariable String boardId,
+//                                                            @RequestHeader("Authorization") String requestTokenHeader) {
+//        // Get the user ID from the token
+//        String userId = getUserIdFromToken(requestTokenHeader);
+//
+//        // Fetch the board entity by its ID
+//        BoardEntity board = boardService.getBoardById(boardId);
+//
+//        // Check if the current user is the owner of the board
+//        if (board.getOwnerId().equals(userId)) {
+//            // The user is the owner, so allow access to the collaborator list
+//            List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
+//            return ResponseEntity.ok(collaborators);
+//        }
+//
+//        // Check if the user is a collaborator on this board with READ/WRITE access
+//        Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollabId(boardId, userId);
+//        if (collaborator.isPresent() &&
+//                (collaborator.get().getAccessLevel() == AccessRight.READ || collaborator.get().getAccessLevel() == AccessRight.WRITE)) {
+//            // The user is a collaborator with READ or WRITE access, so allow access to the list
+//            List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
+//            return ResponseEntity.ok(collaborators);
+//        }
+//
+//        // If the user is neither the owner nor a collaborator with appropriate access, return a 403 Forbidden
+//        throw new UnauthorizedException("You are not authorized to view collaborators of this board");
+//    }
 
     @GetMapping("/{boardId}/collabs")
     public ResponseEntity<List<CollabDTO>> getCollaborators(@PathVariable String boardId,
                                                             @RequestHeader("Authorization") String requestTokenHeader) {
-        String ownerId = getUserIdFromToken(requestTokenHeader);
+        String userId = getUserIdFromToken(requestTokenHeader);
+
         BoardEntity board = boardService.getBoardById(boardId);
 
-        if (!isOwnerOrCollaborator(board, ownerId)) {
+        if (!isOwnerOrCollaborator(board, userId)) {
+            logger.warn("User {} is not authorized to view collaborators for board {}", userId, boardId);
             throw new UnauthorizedException("You are not authorized to view collaborators of this board");
         }
 
         List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
+
         return ResponseEntity.ok(collaborators);
     }
+
+
+
+
 
     @GetMapping("/{boardId}/collabs/{collabId}")
     public ResponseEntity<CollabDTO> getCollaboratorById(@PathVariable String boardId,
                                                          @PathVariable String collabId,
                                                          @RequestHeader("Authorization") String requestTokenHeader) {
-        String ownerId = getUserIdFromToken(requestTokenHeader);
+        String userId = getUserIdFromToken(requestTokenHeader);
         BoardEntity board = boardService.getBoardById(boardId);
 
-        if (!isOwnerOrCollaborator(board, ownerId)) {
-            throw new UnauthorizedException("You are not authorized to view this collaborator");
+
+        boolean isAuthorized = board.getVisibility() == Visibility.PUBLIC ||
+                board.getOwnerId().equals(userId) ||
+                collabService.isCollaborator(boardId, userId);
+
+        if (!isAuthorized) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
 
-        // Use the correct method to find the collaborator by boardId and collabId
         Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollabId(boardId, collabId);
+
         if (collaborator.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -331,10 +420,12 @@ public class BoardController {
 
         return ResponseEntity.ok(collabDTO);
     }
+
+
     @PostMapping("/{boardId}/collabs")
     public ResponseEntity<?> addCollaborator(@PathVariable String boardId,
                                              @RequestHeader("Authorization") String requestTokenHeader,
-                                             @RequestBody @Valid CollabDTO collabDTO) {
+                                             @RequestBody @Valid CollabRequest collabRequest) {
         String ownerId = getUserIdFromToken(requestTokenHeader);
         BoardEntity board = boardService.getBoardById(boardId);
 
@@ -342,32 +433,36 @@ public class BoardController {
             throw new UnauthorizedException("You are not authorized to add collaborators to this board.");
         }
 
-        if (collabDTO.getAccessRight() == null || !(collabDTO.getAccessRight().equals(AccessRight.READ) || collabDTO.getAccessRight().equals(AccessRight.WRITE))) {
+        if (collabRequest.getAccessRight() == null ||
+                !(collabRequest.getAccessRight().equals(AccessRight.READ) || collabRequest.getAccessRight().equals(AccessRight.WRITE))) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid access right.");
         }
 
-        if (collabService.isCollaborator(boardId, collabDTO.getOid())) {
-            throw new CollaboratorAlreadyExistsException("Collaborator already exists.");
-        }
-
-        // Convert CollabDTO to CollabRequest
-        CollabRequest collabRequest = new CollabRequest();
-        collabRequest.setEmail(collabDTO.getEmail());
-        collabRequest.setAccessRight(collabDTO.getAccessRight());
-
-        // Use the converted CollabRequest
         Collaborator collaborator = collabService.addCollaborator(boardId, collabRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(collaborator);
     }
 
 
-    // Helper Methods
     private String getUserIdFromToken(String requestTokenHeader) {
         String token = requestTokenHeader.substring(7);
         return jwtTokenUtil.getUserIdFromToken(token);
     }
 
-    private boolean isOwnerOrCollaborator(BoardEntity board, String userId) {
-        return board.getOwnerId().equals(userId) || collabService.isCollaborator(board.getId(), userId);
+    public boolean isOwnerOrCollaborator(BoardEntity board, String userId) {
+
+        if (board.getOwnerId().equals(userId)) {
+            return true;
+        }
+
+
+        Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollabId(board.getId(), userId);
+        if (collaborator.isPresent()) {
+            AccessRight accessRight = collaborator.get().getAccessLevel();
+            return accessRight == AccessRight.READ || accessRight == AccessRight.WRITE;
+        }
+        return false;
     }
+
+
+
 }

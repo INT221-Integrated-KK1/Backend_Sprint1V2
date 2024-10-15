@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,6 +16,7 @@ public class BoardResponse {
     private String name;
     private OwnerDTO owner;
     private String visibility;
+    private List<CollabDTO> collaborators;
 
     @Getter
     @Setter

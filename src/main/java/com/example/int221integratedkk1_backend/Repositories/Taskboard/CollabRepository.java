@@ -11,9 +11,10 @@ public interface CollabRepository extends JpaRepository<Collaborator, String> {
 
 
 
-//    @Query("SELECT c FROM Collaborator c WHERE c.boardId = :boardId")
     List<Collaborator> findByBoardId(@Param("boardId") String boardId);
     Optional<Collaborator> findByBoardIdAndCollaboratorId(String boardId, String collabId);
 
     boolean existsByBoardIdAndCollaboratorId(String boardId, String collaboratorId);
+    List<Collaborator> findByCollaboratorId(String collaboratorId);
+    boolean existsByBoardIdAndCollaboratorEmail(String boardId, String collaboratorEmail);
 }
