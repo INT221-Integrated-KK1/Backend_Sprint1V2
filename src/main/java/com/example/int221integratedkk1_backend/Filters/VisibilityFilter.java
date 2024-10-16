@@ -6,25 +6,16 @@ import com.example.int221integratedkk1_backend.Repositories.Taskboard.BoardRepos
 import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
 import com.example.int221integratedkk1_backend.Services.Taskboard.CollabService;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -45,7 +36,6 @@ public class VisibilityFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
 
-        // Only apply this filter to board-related endpoints
         if (requestURI.matches("/v3/boards/([^/]+)(/.*)?")) {
             String boardId = requestURI.split("/")[3];
             Optional<BoardEntity> boardOptional = boardRepository.findById(boardId);
@@ -53,13 +43,13 @@ public class VisibilityFilter extends OncePerRequestFilter {
             if (boardOptional.isPresent()) {
                 BoardEntity board = boardOptional.get();
 
-                // Public board: allow access for GET requests without authentication
+                // Public board Allow GET requests without authentication
                 if (board.getVisibility() == Visibility.PUBLIC && method.equals("GET")) {
                     filterChain.doFilter(request, response);
                     return;
                 }
 
-                // Private board: require authentication and check if user is owner or collaborator
+                // Private board: Require authentication and check if user is owner or collaborator
                 String authorizationHeader = request.getHeader("Authorization");
 
                 if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -67,14 +57,8 @@ public class VisibilityFilter extends OncePerRequestFilter {
                     try {
                         String userIdFromToken = jwtTokenUtil.getUserIdFromToken(jwtToken);
 
-                        if (board.getOwnerId().equals(userIdFromToken)) {
-                            // User is the board owner, allow access
-                            filterChain.doFilter(request, response);
-                            return;
-                        }
-
-                        // Check if the user is a collaborator
-                        if (collabService.isCollaborator(boardId, userIdFromToken)) {
+                        // User is the board owner or collaborator, allow access
+                        if (board.getOwnerId().equals(userIdFromToken) || collabService.isCollaborator(boardId, userIdFromToken)) {
                             filterChain.doFilter(request, response);
                             return;
                         }
@@ -102,7 +86,6 @@ public class VisibilityFilter extends OncePerRequestFilter {
             }
         }
 
-        // If the request does not match board-related endpoints, continue with the filter chain
         filterChain.doFilter(request, response);
     }
 }
