@@ -58,13 +58,8 @@ public class BoardController {
     public ResponseEntity<Map<String, Object>> getAllBoards(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
 
         String ownerId = getUserIdFromToken(requestTokenHeader);
-
-
         List<BoardEntity> personalBoards = boardService.getUserBoards(ownerId);
-
-
         List<BoardEntity> collabBoards = collabService.getBoardsWhereUserIsCollaborator(ownerId);
-
 
         List<BoardResponse> personalBoardResponses = personalBoards.stream().map(boardEntity -> {
             return buildBoardResponse(boardEntity);
@@ -80,6 +75,7 @@ public class BoardController {
 
         return ResponseEntity.ok(responseBody);
     }
+
     private BoardResponse buildBoardResponse(BoardEntity boardEntity) {
         BoardResponse response = new BoardResponse();
         response.setId(boardEntity.getId());
@@ -96,7 +92,7 @@ public class BoardController {
         return response;
     }
 
-
+    // Create a new board
     @PostMapping("")
     public ResponseEntity<BoardResponse> createBoard(@RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
                                                      @Valid @RequestBody(required = false) BoardRequest boardRequest) {
@@ -112,7 +108,7 @@ public class BoardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(boardResponse);
     }
 
-
+    // Get a specific board by ID
     @GetMapping("/{boardId}")
     public ResponseEntity<BoardResponse> getBoardById(@PathVariable String boardId,
                                                       @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
@@ -122,13 +118,13 @@ public class BoardController {
         return ResponseEntity.ok(boardResponse);
     }
 
-
+    // Update board visibility
     @PatchMapping("/{boardId}")
     public ResponseEntity<?> updateBoardVisibility(@PathVariable String boardId,
                                                    @RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
                                                    @RequestBody(required = false) Map<String, String> body) {
         if (body == null || !body.containsKey("visibility")) {
-            return ResponseEntity.badRequest().body("Missing 'visibility' field.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Missing 'visibility' field.");
         }
 
         String visibilityValue = body.get("visibility");
@@ -165,7 +161,7 @@ public class BoardController {
                                         @Valid @RequestBody(required = false) TaskRequest taskRequest,
                                         @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) throws Throwable {
         if (taskRequest == null || taskRequest.getTitle() == null || taskRequest.getTitle().trim().isEmpty() || taskRequest.getStatus() == null) {
-            return ResponseEntity.badRequest().body("Invalid task request body.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid task request body.");
         }
 
         String userId = getUserIdFromToken(requestTokenHeader);
@@ -193,7 +189,7 @@ public class BoardController {
                                         @Valid @RequestBody(required = false) TaskRequest taskRequest,
                                         @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) throws Throwable {
         if (taskRequest == null || taskRequest.getTitle() == null || taskRequest.getTitle().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid task update request body.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid task update request body.");
         }
 
         String userId = getUserIdFromToken(requestTokenHeader);
@@ -240,7 +236,7 @@ public class BoardController {
                                           @RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
                                           @Valid @RequestBody(required = false) StatusEntity statusEntity) {
         if (statusEntity == null || statusEntity.getName() == null || statusEntity.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid status request body.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid status request body.");
         }
 
         String userId = getUserIdFromToken(requestTokenHeader);
@@ -268,7 +264,7 @@ public class BoardController {
                                           @RequestHeader(value = "Authorization", required = false) String requestTokenHeader,
                                           @Valid @RequestBody(required = false) StatusEntity updatedStatus) {
         if (updatedStatus == null || updatedStatus.getName() == null || updatedStatus.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Invalid status update request body.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid status update request body.");
         }
 
         String userId = getUserIdFromToken(requestTokenHeader);
@@ -289,7 +285,6 @@ public class BoardController {
         String userId = getUserIdFromToken(requestTokenHeader);
         BoardEntity board = boardService.getBoardById(boardId);
 
-
         if (!isOwnerOrWriteCollaborator(board, userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You do not have permission to delete statuses on this board.");
         }
@@ -304,16 +299,14 @@ public class BoardController {
                                                             @RequestHeader(value = "Authorization", required = false) String requestTokenHeader) {
         String userId = null;
 
-
         BoardEntity board = boardService.getBoardById(boardId);
-
 
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             String jwtToken = requestTokenHeader.substring(7);
             userId = jwtTokenUtil.getUserIdFromToken(jwtToken);
         }
 
-        // Public board Allow non-authenticated users to view the collaborator list
+        // Public board: Allow non-authenticated users to view the collaborator list
         if (board.getVisibility() == Visibility.PUBLIC) {
             List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
             return ResponseEntity.ok(collaborators);
@@ -397,7 +390,6 @@ public class BoardController {
         if (board.getOwnerId().equals(userId)) {
             return true;
         }
-
 
         Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollaboratorId(board.getId(), userId);
         return collaborator.isPresent() && collaborator.get().getAccessLevel() == AccessRight.WRITE;
