@@ -12,9 +12,9 @@ public interface CollabRepository extends JpaRepository<Collaborator, String> {
 
 
     List<Collaborator> findByBoardId(@Param("boardId") String boardId);
-    Optional<Collaborator> findByBoardIdAndCollaboratorId(String boardId, String collabId);
+    Optional<Collaborator> findByBoardIdAndCollabsId(String boardId, String collabId);
 
-    boolean existsByBoardIdAndCollaboratorId(String boardId, String collaboratorId);
-    List<Collaborator> findByCollaboratorId(String collaboratorId);
-    boolean existsByBoardIdAndCollaboratorEmail(String boardId, String collaboratorEmail);
+    boolean existsByBoardIdAndCollabsId(String boardId, String collaboratorId);
+    List<Collaborator> findByCollabsId(String collaboratorId);
+    boolean existsByBoardIdAndCollabsEmail(String boardId, String collaboratorEmail);
 }

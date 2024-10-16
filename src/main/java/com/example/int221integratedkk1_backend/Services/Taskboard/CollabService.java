@@ -36,22 +36,22 @@ public class CollabService {
         List<Collaborator> collaborators = collabRepository.findByBoardId(boardId);
         return collaborators.stream().map(collab -> {
             CollabDTO collaboratorDTO = new CollabDTO();
-            collaboratorDTO.setOid(collab.getCollaboratorId());
-            collaboratorDTO.setName(collab.getCollaboratorName());
-            collaboratorDTO.setEmail(collab.getCollaboratorEmail());
+            collaboratorDTO.setOid(collab.getCollabsId());
+            collaboratorDTO.setName(collab.getCollabsName());
+            collaboratorDTO.setEmail(collab.getCollabsEmail());
             collaboratorDTO.setAccessRight(collab.getAccessLevel());
             collaboratorDTO.setAddedOn(collab.getAddedOn());
             return collaboratorDTO;
         }).collect(Collectors.toList());
     }
 
-    public boolean isCollaborator(String boardId, String userId) {
-        return collabRepository.existsByBoardIdAndCollaboratorId(boardId, userId);
-    }
+//    public boolean isCollaborator(String boardId, String userId) {
+//        return collabRepository.existsByBoardIdAndCollabsId(boardId, userId);
+//    }
 
 
     public Optional<Collaborator> getCollaboratorByBoardIdAndCollabId(String boardId, String collabId) {
-        return collabRepository.findByBoardIdAndCollaboratorId(boardId, collabId);
+        return collabRepository.findByBoardIdAndCollabsId(boardId, collabId);
     }
     public Collaborator addCollaborator(String boardId, CollabRequest collabRequest)
             throws CollaboratorAlreadyExistsException, ItemNotFoundException {
@@ -64,7 +64,7 @@ public class CollabService {
             throw new ItemNotFoundException("User not found with email: " + collabRequest.getEmail());
         }
 
-        if (collabRepository.existsByBoardIdAndCollaboratorId(boardId, user.getOid())) {
+        if (collabRepository.existsByBoardIdAndCollabsId(boardId, user.getOid())) {
             throw new CollaboratorAlreadyExistsException("Collaborator already exists for this board.");
         }
 
@@ -76,9 +76,9 @@ public class CollabService {
 
         Collaborator collaborator = new Collaborator();
         collaborator.setBoardId(boardId);
-        collaborator.setCollaboratorId(user.getOid());
-        collaborator.setCollaboratorName(user.getName());
-        collaborator.setCollaboratorEmail(user.getEmail());
+        collaborator.setCollabsId(user.getOid());
+        collaborator.setCollabsName(user.getName());
+        collaborator.setCollabsEmail(user.getEmail());
         collaborator.setAccessLevel(collabRequest.getAccessRight());
         collaborator.setAddedOn(new Timestamp(System.currentTimeMillis()));
 
@@ -90,15 +90,22 @@ public class CollabService {
     }
 
     public List<BoardEntity> getBoardsWhereUserIsCollaborator(String userId) {
-        List<Collaborator> collaborators = collabRepository.findByCollaboratorId(userId);
+        List<Collaborator> collaborators = collabRepository.findByCollabsId(userId);
         List<String> boardIds = collaborators.stream().map(Collaborator::getBoardId).collect(Collectors.toList());
         return boardRepository.findAllById(boardIds);
     }
 
-    public boolean isCollaboratorWithAccess(String boardId, String userId, AccessRight requiredAccessRight) {
-        Optional<Collaborator> collaborator = collabRepository.findByBoardIdAndCollaboratorId(boardId, userId);
+//    public boolean isCollaboratorWithAccess(String boardId, String userId, AccessRight requiredAccessRight) {
+//        Optional<Collaborator> collaborator = collabRepository.findByBoardIdAndCollaboratorId(boardId, userId);
+//
+//        return collaborator.isPresent() && collaborator.get().getAccessLevel().equals(requiredAccessRight);
+//    }
+public Optional<Collaborator> getCollaboratorByBoardIdAndCollaboratorId(String boardId, String userId) {
+    return collabRepository.findByBoardIdAndCollabsId(boardId, userId);
+}
 
-        return collaborator.isPresent() && collaborator.get().getAccessLevel().equals(requiredAccessRight);
+    public boolean isCollaborator(String boardId, String userId) {
+        return collabRepository.existsByBoardIdAndCollabsId(boardId, userId);
     }
 
 

@@ -13,13 +13,13 @@ import java.sql.Timestamp;
 public class Collaborator {
     @Id
     @Column(name = "collabsId")
-    private String collaboratorId;
+    private String collabsId;
 
     @Column(name = "collabsName")
-    private String collaboratorName;
+    private String collabsName;
 
     @Column(name = "collabsEmail")
-    private String collaboratorEmail;
+    private String collabsEmail;
 
     @Column(name = "boardId")
     private String boardId;

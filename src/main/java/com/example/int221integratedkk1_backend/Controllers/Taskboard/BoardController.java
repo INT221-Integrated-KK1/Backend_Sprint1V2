@@ -367,24 +367,38 @@ public class BoardController {
 //        throw new UnauthorizedException("You are not authorized to view collaborators of this board");
 //    }
 
-    @GetMapping("/{boardId}/collabs")
-    public ResponseEntity<List<CollabDTO>> getCollaborators(@PathVariable String boardId,
-                                                            @RequestHeader("Authorization") String requestTokenHeader) {
-        String userId = getUserIdFromToken(requestTokenHeader);
+//    @GetMapping("/{boardId}/collabs")
+//    public ResponseEntity<List<CollabDTO>> getCollaborators(@PathVariable String boardId,
+//                                                            @RequestHeader("Authorization") String requestTokenHeader) {
+//        String userId = getUserIdFromToken(requestTokenHeader);
+//
+//        BoardEntity board = boardService.getBoardById(boardId);
+//
+//        if (!isOwnerOrCollaborator(board, userId)) {
+//            logger.warn("User {} is not authorized to view collaborators for board {}", userId, boardId);
+//            throw new UnauthorizedException("You are not authorized to view collaborators of this board");
+//        }
+//
+//        List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
+//
+//        return ResponseEntity.ok(collaborators);
+//    }
+@GetMapping("/{boardId}/collabs")
+public ResponseEntity<List<CollabDTO>> getCollaborators(@PathVariable String boardId,
+                                                        @RequestHeader("Authorization") String requestTokenHeader) {
+    String userId = getUserIdFromToken(requestTokenHeader);
 
-        BoardEntity board = boardService.getBoardById(boardId);
+    BoardEntity board = boardService.getBoardById(boardId);
 
-        if (!isOwnerOrCollaborator(board, userId)) {
-            logger.warn("User {} is not authorized to view collaborators for board {}", userId, boardId);
-            throw new UnauthorizedException("You are not authorized to view collaborators of this board");
-        }
-
-        List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
-
-        return ResponseEntity.ok(collaborators);
+    // Allow if the user is either the owner or a collaborator with READ or WRITE access
+    if (!board.getOwnerId().equals(userId) && !collabService.isCollaborator(boardId, userId)) {
+        throw new UnauthorizedException("You are not authorized to view collaborators of this board");
     }
 
+    List<CollabDTO> collaborators = collabService.getCollaborators(boardId);
 
+    return ResponseEntity.ok(collaborators);
+}
 
 
 
@@ -412,9 +426,9 @@ public class BoardController {
 
         Collaborator collab = collaborator.get();
         CollabDTO collabDTO = new CollabDTO();
-        collabDTO.setOid(collab.getCollaboratorId());
-        collabDTO.setName(collab.getCollaboratorName());
-        collabDTO.setEmail(collab.getCollaboratorEmail());
+        collabDTO.setOid(collab.getCollabsId());
+        collabDTO.setName(collab.getCollabsName());
+        collabDTO.setEmail(collab.getCollabsEmail());
         collabDTO.setAccessRight(collab.getAccessLevel());
         collabDTO.setAddedOn(collab.getAddedOn());
 
@@ -449,19 +463,23 @@ public class BoardController {
     }
 
     public boolean isOwnerOrCollaborator(BoardEntity board, String userId) {
-
+        // Check if the user is the owner
         if (board.getOwnerId().equals(userId)) {
             return true;
         }
 
-
-        Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollabId(board.getId(), userId);
+        // Check if the user is a collaborator with READ or WRITE access
+        Optional<Collaborator> collaborator = collabService.getCollaboratorByBoardIdAndCollaboratorId(board.getId(), userId);
         if (collaborator.isPresent()) {
             AccessRight accessRight = collaborator.get().getAccessLevel();
+            // Return true if access level is either READ or WRITE
             return accessRight == AccessRight.READ || accessRight == AccessRight.WRITE;
         }
+
+        // Return false if the user is neither an owner nor a collaborator with appropriate access
         return false;
     }
+
 
 
 
