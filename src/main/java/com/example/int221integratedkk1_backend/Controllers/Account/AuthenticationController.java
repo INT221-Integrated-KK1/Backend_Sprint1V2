@@ -9,6 +9,8 @@ import com.example.int221integratedkk1_backend.Services.Account.JwtTokenUtil;
 import com.example.int221integratedkk1_backend.Services.Account.JwtUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -75,44 +77,55 @@ public class AuthenticationController {
     // pbi 22 เพิ่ม method post มาอีกอันนึง เอาไว้รับ refresh token จาก frontend
     // เช็คว่า token 30 นาที หมดอายุ แล้ว gen token ใหม่ขึ้นมา (เป็น token 30 นาที)
     // อย่าลืมเช็ค oid ให้มันตรงกัน
+//
     @PostMapping("/token")
     public ResponseEntity<Object> refreshAccessToken(@RequestHeader("x-refresh-token") String requestTokenHeader) {
         String refreshToken = requestTokenHeader;
         Claims claims = null;
 
+        try {
+            // Extract claims from the refresh token
+            claims = jwtTokenUtil.getAllClaimsFromToken(refreshToken);
 
-            try {
-                // ดึงข้อมูล claims จาก refresh token
-                claims = jwtTokenUtil.getAllClaimsFromToken(refreshToken);
-
-                // ตรวจสอบว่า refresh token หมดอายุหรือไม่
-                if (jwtTokenUtil.isTokenExpired(refreshToken)) {
-                    throw new UnauthorizedException("Refresh token has expired");
-                }
-
-                // ดึง oid (userId) จาก claims
-                String oidFromRefreshToken = claims.get("oid", String.class);
-
-                // ตรวจสอบว่าผู้ใช้ที่เรียกใช้ refresh token นี้มี oid ที่ตรงกัน
-                UserDetails userDetails = jwtUserDetailsService.loadUserByOid(oidFromRefreshToken);
-                if (userDetails != null) {
-                    AuthUser authUser = (AuthUser) userDetails;
-                    if (!authUser.getOid().equals(oidFromRefreshToken)) {
-                        throw new UnauthorizedException("Invalid userId in refresh token");
-                    }
-
-                    // สร้าง access token ใหม่ (อายุ 30 นาที) และส่งคืนให้ frontend
-                    String newAccessToken = jwtTokenUtil.generateToken(userDetails);
-                    return ResponseEntity.ok(new JwtResponseToken(newAccessToken));
-                }
-
-            } catch (ExpiredJwtException e) {
+            // Ensure refresh token has not expired
+            if (jwtTokenUtil.isTokenExpired(refreshToken)) {
                 throw new UnauthorizedException("Refresh token has expired");
-            } catch (Exception e) {
-                throw new UnauthorizedException("Invalid refresh token");
             }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+            // Get the oid (userId) from claims
+            String oidFromRefreshToken = claims.get("oid", String.class);
+            if (oidFromRefreshToken == null) {
+                throw new UnauthorizedException("Invalid refresh token: oid is missing");
+            }
+
+            // Check that the user exists and has a matching oid
+            UserDetails userDetails = jwtUserDetailsService.loadUserByOid(oidFromRefreshToken);
+            if (userDetails == null) {
+                // User no longer exists
+                throw new UnauthorizedException("Invalid refresh token: User does not exist");
+            }
+
+            AuthUser authUser = (AuthUser) userDetails;
+            if (!authUser.getOid().equals(oidFromRefreshToken)) {
+                throw new UnauthorizedException("Invalid refresh token: OID mismatch");
+            }
+
+            // Generate a new access token
+            String newAccessToken = jwtTokenUtil.generateToken(userDetails);
+            return ResponseEntity.ok(new JwtResponseToken(newAccessToken));
+
+        } catch (ExpiredJwtException e) {
+           // logger.error("Refresh token has expired", e);
+            throw new UnauthorizedException("Refresh token has expired");
+        } catch (UnauthorizedException e) {
+            // Catch and log the unauthorized exceptions explicitly
+            //logger.error("Unauthorized: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            // Handle generic exceptions
+            //logger.error("Error processing refresh token", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error occurred");
+        }
     }
 
 }

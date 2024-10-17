@@ -69,22 +69,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorDetails);
     }
 
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException exception, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Username or Password is incorrect.", request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-    }
+//    @ExceptionHandler(UnauthorizedException.class)
+//    public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException exception, WebRequest request) {
+//        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Username or Password is incorrect.", request.getDescription(false).replace("uri=", ""));
+//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+//    }
+@ExceptionHandler(UnauthorizedException.class)
+public ResponseEntity<Object> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
+    return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+}
     @ExceptionHandler(CollaboratorAlreadyExistsException.class)
     public ResponseEntity<Object> handleCollaboratorAlreadyExistsException(CollaboratorAlreadyExistsException ex, WebRequest request) {
         String errorMessage = ex.getMessage();
         return new ResponseEntity<>(errorMessage, HttpStatus.CONFLICT); // 409 Conflict
     }
 
-    @ExceptionHandler(InternalServerErrorException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<String> handleInternalServerErrorException(InternalServerErrorException exception) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
-    }
+//    @ExceptionHandler(InternalServerErrorException.class)
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    public ResponseEntity<String> handleInternalServerErrorException(InternalServerErrorException exception) {
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getMessage());
+//    }
 
     private ResponseEntity<ErrorResponse> createErrorResponse(String message, HttpStatus httpStatus, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(httpStatus.value(), message, request.getDescription(false).replace("uri=", ""));

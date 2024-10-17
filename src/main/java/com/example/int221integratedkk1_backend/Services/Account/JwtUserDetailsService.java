@@ -25,7 +25,7 @@ public class JwtUserDetailsService implements UserDetailsService {
     private UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String userName) {
         UsersEntity users = userRepository.findByUsername(userName);
         if (users == null) {
             throw new UnauthorizedException(userName + " does not exist !!");
@@ -40,19 +40,32 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
 
 
-    public UserDetails loadUserByOid(String oid) throws UsernameNotFoundException {
-        UsersEntity users = userRepository.findByOid(oid);
-        if (users == null) {
-            throw new UnauthorizedException(oid + " oid does not exist");
-        }
-
-        List<GrantedAuthority> roles = new ArrayList<>();
-        GrantedAuthority grantedAuthority = () -> users.getRole().toString();
-        roles.add(grantedAuthority);
-
-        return new AuthUser(users.getUsername(), users.getPassword(), roles,
-                users.getOid(), users.getEmail(), users.getRole(),users.getName());
+//    public UserDetails loadUserByOid(String oid){
+//        UsersEntity users = userRepository.findByOid(oid);
+//        if (users == null) {
+//            throw new UnauthorizedException(oid + " oid does not exist");
+//        }
+//
+//        List<GrantedAuthority> roles = new ArrayList<>();
+//        GrantedAuthority grantedAuthority = () -> users.getRole().toString();
+//        roles.add(grantedAuthority);
+//
+//        return new AuthUser(users.getUsername(), users.getPassword(), roles,
+//                users.getOid(), users.getEmail(), users.getRole(),users.getName());
+//    }
+public UserDetails loadUserByOid(String oid) {
+    UsersEntity users = userRepository.findByOid(oid);
+    if (users == null) {
+        throw new UnauthorizedException(oid + " oid does not exist");
     }
+
+    List<GrantedAuthority> roles = new ArrayList<>();
+    GrantedAuthority grantedAuthority = () -> users.getRole().toString();
+    roles.add(grantedAuthority);
+
+    return new AuthUser(users.getUsername(), users.getPassword(), roles,
+            users.getOid(), users.getEmail(), users.getRole(), users.getName());
+}
 
     @Transactional
     public boolean authenticateUser(String username, String password) {
