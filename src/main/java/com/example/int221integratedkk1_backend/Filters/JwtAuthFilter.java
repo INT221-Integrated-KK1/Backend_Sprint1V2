@@ -28,6 +28,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
+
         final String requestTokenHeader = request.getHeader("Authorization");
         String username = null;
         String jwtToken = null;
@@ -50,6 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 } else {
                     throw new UnauthorizedException("Invalid token or user not authorized.");
                 }
+
             }
 
             filterChain.doFilter(request, response);
@@ -59,6 +61,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
         }
+
     }
 
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
