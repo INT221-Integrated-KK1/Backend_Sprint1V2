@@ -15,7 +15,7 @@ import java.util.List;
 public class BoardEntity {
 
     @Id
-    @Column(name = "BoardId", length = 10)
+    @Column(name = "boardId", length = 10)
     private String id;
 
     @Column(name = "boardname", nullable = false, length = 120)
