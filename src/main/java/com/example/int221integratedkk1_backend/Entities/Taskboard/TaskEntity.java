@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
 @Setter
 @Getter
 @Entity
-@Table(name = "task", schema = "ITB-KK-V3")
+@Table(name = "Task", schema = "ITB-KK-V3")
 public class TaskEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
